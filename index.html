@@ -37929,7 +37929,75 @@ const Radar = (() => {
     document.getElementById('radar-corpo').innerHTML =
       `<div class="rd-sec"><h3>💰 Orçamentos parados — ${fmtR(soma)} em aberto</h3>${o.length ? o.map(linhaO).join('') : '<div class="rd-vazio">Nenhum orçamento em aberto.</div>'}</div>` +
       `<div class="rd-sec"><h3>🗓️ Risco de falta — próximos 7 dias</h3>${f.length ? f.map(linhaF).join('') : '<div class="rd-vazio">Nenhuma consulta nos próximos 7 dias.</div>'}</div>` +
-      htmlFinancas();
+      htmlExtras() + htmlFinancas();
+  }
+
+
+  // ── avaliação no Google: quem foi atendido nos últimos 3 dias e ainda não recebeu o pedido ──
+  const LINK_KEY = 'clinus_google_review';
+  const linkGoogle = () => { try { return localStorage.getItem(LINK_KEY) || ''; } catch (e) { return ''; } };
+  function salvarLink(v) { try { localStorage.setItem(LINK_KEY, String(v || '').trim()); } catch (e) {} render(); }
+  const wa = (tel, msg) => 'https://wa.me/55' + String(tel).replace(/\D/g, '') + '?text=' + encodeURIComponent(msg);
+  const primeiro = n => String(n || '').split(' ')[0];
+
+  function avaliacoes() {
+    const lim = new Date(Date.now() - 3 * 864e5).toISOString().slice(0, 10), hoje = new Date().toISOString().slice(0, 10);
+    const vistos = {};
+    return agenda().filter(ev => ev.status === 'atendida' && ev.pacId && ev.data >= lim && ev.data <= hoje)
+      .map(ev => pac(ev.pacId)).filter(p => p && p.tel && !p.avaliacaoPedidaEm && !vistos[p.id] && (vistos[p.id] = 1));
+  }
+  function pedirAvaliacao(pacId) {
+    const link = linkGoogle(); if (!link) { App._showToast('⚠️ Cole o link de avaliação do Google primeiro.'); return; }
+    const lista = Store.pacientes(), p = lista.find(x => x.id === pacId); if (!p || !p.tel) return;
+    window.open(wa(p.tel, `Olá, ${primeiro(p.nome)}! Aqui é a Equipe Hansen. Obrigado pela visita! Se puder, conte como foi sua experiência no Google, leva menos de 1 minuto: ${link}`), '_blank');
+    p.avaliacaoPedidaEm = new Date().toISOString();
+    p.log = [{ d: hoje(), t: '⭐ Pedido de avaliação no Google enviado', ok: true }, ...(p.log || [])];
+    Store.setPacientes(lista); render();
+  }
+
+  // ── fila do dia: confirmações de amanhã + avaliações, uma por clique (até ligar uma API de WhatsApp) ──
+  const feitos = new Set();
+  function fila() {
+    const am = new Date(Date.now() + 864e5).toISOString().slice(0, 10), out = [];
+    agenda().filter(ev => ev.data === am && ev.nome && (!ev.status || ev.status === 'agendado')).forEach(ev => {
+      const p = pac(ev.pacId); if (p && p.tel) out.push({ k: 'c' + (ev.id || ev.pacId + ev.hora), nome: ev.nome, tipo: 'confirmar consulta de amanhã',
+        abrir: () => lembrar(ev.id, ev.pacId, ev.data, ev.hora, ev.nome) });
+    });
+    if (linkGoogle()) avaliacoes().forEach(p => out.push({ k: 'a' + p.id, nome: p.nome, tipo: 'pedir avaliação no Google', abrir: () => pedirAvaliacao(p.id) }));
+    return out.filter(x => !feitos.has(x.k));
+  }
+  function proximo() { const f = fila(); if (!f.length) return; feitos.add(f[0].k); f[0].abrir(); render(); }
+
+  // ── notas fiscais: planilha dos recebimentos do mês para o contador emitir ──
+  function csvNotas(m) {
+    m = m || mes();
+    const linhas = [['Data', 'Paciente', 'CPF', 'Valor', 'Forma']];
+    Store.ativos().forEach(p => orcs(p).forEach(o => pagos(o).forEach(pg => {
+      if (String(pg.iso || '').slice(0, 7) !== m) return;
+      linhas.push([String(pg.iso).slice(0, 10).split('-').reverse().join('/'), p.nome || '', p.cpf || 'SEM CPF', valor(pg.valor).toFixed(2).replace('.', ','), pg.forma || '']);
+    })));
+    const csv = '﻿' + linhas.map(l => l.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = `notas-fiscais-${m}.csv`; a.click();
+    App._showToast(`🧾 ${linhas.length - 1} recebimento(s) exportado(s)`);
+    return linhas.length - 1;
+  }
+
+  function htmlExtras() {
+    const f = fila(), av = avaliacoes(), link = linkGoogle();
+    return `<div class="rd-sec"><h3>📤 Fila de WhatsApp de hoje — ${f.length} pendente(s)</h3>` +
+      (f.length ? `<div class="rd-lin"><div class="rd-info"><div class="rd-nome">Próximo: ${esc(f[0].nome)}</div><div class="rd-sub">${esc(f[0].tipo)}</div></div><button class="btn-tela" onclick="Radar.proximo()">📲 Enviar próximo</button></div>`
+                : '<div class="rd-vazio">Nada na fila.</div>') + `</div>` +
+      `<div class="rd-sec"><h3>⭐ Avaliações no Google</h3>
+        <div class="rd-lin"><div class="rd-info"><div class="rd-sub">Link de avaliação da clínica (Google Perfil da Empresa → "Pedir avaliações")</div>
+        <input id="rd-link" value="${esc(link)}" placeholder="https://g.page/r/..." style="width:100%;margin-top:4px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--r-p)"></div>
+        <button class="btn-tela" onclick="Radar.salvarLink(document.getElementById('rd-link').value)">Salvar</button></div>` +
+      (av.length ? av.map(p => `<div class="rd-lin"><div class="rd-info"><div class="rd-nome">${esc(p.nome)}</div><div class="rd-sub">atendido nos últimos 3 dias</div></div><button class="btn-tela" ${link ? '' : 'disabled'} onclick="Radar.pedirAvaliacao('${esc(p.id)}')">⭐ Pedir</button></div>`).join('')
+                 : '<div class="rd-vazio">Ninguém atendido recentemente aguardando pedido.</div>') + `</div>` +
+      `<div class="rd-sec"><h3>🧾 Notas fiscais para o contador</h3><div class="rd-lin"><div class="rd-info"><div class="rd-sub">Planilha com data, paciente, CPF, valor e forma de cada recebimento do mês.</div>
+        <input type="month" id="rd-mes" value="${mes()}" style="margin-top:4px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r-p)"></div>
+        <button class="btn-tela" onclick="Radar.csvNotas(document.getElementById('rd-mes').value)">⬇️ Baixar planilha</button></div></div>`;
   }
 
   function lembrar(evId, pacId, data, hora, nome) {
@@ -37940,7 +38008,7 @@ const Radar = (() => {
   }
 
   function abrir() { render(); App.openOverlay('overlay-radar'); }
-  return { abrir, render, orcamentos, faltas, lembrar };
+  return { abrir, render, orcamentos, faltas, lembrar, salvarLink, pedirAvaliacao, proximo, fila, avaliacoes, csvNotas };
 })();
 window.Radar = Radar;
 (function () {
