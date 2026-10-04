@@ -31012,7 +31012,7 @@ Não escreva mais nada além disso.`;
     // assistente IA
     _iaToggleItem, _iaAplicarSelecionados, _iaSalvarApiKey, _iaRemoverApiKey,
     analisarRiscos, _riscoRender, _riscoParse, _riscoHash,
-    msgOrcamento, _msgGerar, _msgEnviar, _msgContexto,
+    msgOrcamento, _procNome: id => (PROC_TREE.find(x => x.id === id) || {}).nome, _msgGerar, _msgEnviar, _msgContexto,
     // agenda + relatórios avançados
     openAgenda, openAniversariantes, _agendaSetModo, _agendaMesNav, _confirmarWhats, _toggleConfirmado,
     _relSwitchTab, _renderProducao, _renderParados, _renderChurn,
@@ -37793,7 +37793,7 @@ window.Desp = Desp;
   <div class="tela-modal" style="width:760px;max-width:96vw;">
     <div class="tela-header" style="flex-shrink:0;">
       <div><div class="tela-title">📡 Radar da clínica</div>
-        <div class="tela-sub">Quem chamar primeiro. Nada é enviado sozinho.</div></div>
+        <div class="tela-sub">Quem chamar primeiro e como está o caixa. Nada é enviado sozinho.</div></div>
       <button class="btn-close" onclick="App.closeOverlay('overlay-radar')">✕</button>
     </div>
     <div class="tela-body" id="radar-corpo"></div>
@@ -37811,6 +37811,11 @@ window.Desp = Desp;
 .rd-medio{background:var(--yellow-bg);color:var(--yellow)}
 .rd-baixo{background:var(--green-bg);color:var(--green)}
 .rd-sec{margin-bottom:18px}
+.rd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.rd-card{border:1px solid var(--border);border-radius:var(--r-m);padding:10px;background:var(--bg1)}
+.rd-ct{font-size:11px;color:var(--text2)}
+.rd-cv{font-family:var(--mono);font-size:17px;font-weight:600;margin:3px 0;color:var(--text)}
+.rd-neg{color:var(--red)}
 </style>
 <script>
 const Radar = (() => {
@@ -37858,6 +37863,55 @@ const Radar = (() => {
       }).sort((a, b) => b.score - a.score || (a.ev.data + a.ev.hora).localeCompare(b.ev.data + b.ev.hora));
   }
 
+
+  // ── finanças: tudo calculado só de leitura, a partir dos pagamentos e parcelas já lançados ──
+  const orcs = p => [p.orcamento].concat(p.orcamentosFechados || []).filter(Boolean);
+  const pagos = o => (o.pagamentos || []).filter(pg => pg && !pg.estornadoEm && !pg.transferido);
+  function financas() {
+    const m = mes(), hoje = new Date().toISOString().slice(0, 10);
+    const em30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+    let entrou = 0, aReceber = 0, vencido = 0, somaTk = 0, nTk = 0;
+    const devedores = [], procs = {};
+    Store.ativos().forEach(p => orcs(p).forEach(o => {
+      const lista = pagos(o);
+      lista.forEach(pg => { if (String(pg.iso || '').slice(0, 7) === m) entrou += valor(pg.valor); });
+      if (o.aprovadoEm) {
+        const t = valor(o.total);
+        if (t > 0) { somaTk += t; nTk++; }
+        const ids = Object.keys(o.itens || {});
+        if (t > 0 && ids.length) ids.forEach(id => { procs[id] = (procs[id] || { v: 0, n: 0 }); procs[id].v += t / ids.length; procs[id].n++; });
+      }
+      if (Array.isArray(o.parcelas)) {
+        let caixa = lista.reduce((t, pg) => t + valor(pg.valor), 0);
+        o.parcelas.forEach(pc => {
+          const usado = Math.min(caixa, pc.valor); caixa -= usado;
+          const resta = pc.valor - usado;
+          if (resta <= 0.01 || !pc.venc) return;
+          if (pc.venc < hoje) { vencido += resta; devedores.push({ nome: p.nome, v: resta, d: Math.floor((new Date(hoje) - new Date(pc.venc)) / 864e5) }); }
+          else if (pc.venc <= em30) aReceber += resta;
+        });
+      }
+    }));
+    let desp = null;
+    try { const dm = Desp.get().meses[m]; if (dm) desp = Desp.totalDoMes(dm); } catch (e) { /* sem despesas */ }
+    const top = Object.keys(procs).map(id => ({ id, nome: (App._procNome && App._procNome(id)) || id, v: procs[id].v, n: procs[id].n }))
+      .sort((a, b) => b.v - a.v).slice(0, 5);
+    return { entrou, desp, lucro: desp == null ? null : entrou - desp, aReceber, vencido, ticket: nTk ? somaTk / nTk : 0, nTk,
+             devedores: devedores.sort((a, b) => b.v - a.v).slice(0, 5), top };
+  }
+  function htmlFinancas() {
+    const f = financas(), card = (t, v, sub, cls) => `<div class="rd-card"><div class="rd-ct">${t}</div><div class="rd-cv ${cls || ''}">${v}</div><div class="rd-sub">${sub || ''}</div></div>`;
+    return `<div class="rd-sec"><h3>💵 Finanças do mês</h3><div class="rd-grid">` +
+      card('Entrou', fmtR(f.entrou), 'pagamentos do mês') +
+      card('Despesas', f.desp == null ? '—' : fmtR(f.desp), f.desp == null ? 'sem despesas lançadas' : 'módulo de despesas') +
+      card('Lucro', f.lucro == null ? '—' : fmtR(f.lucro), 'entrou − despesas', f.lucro != null && f.lucro < 0 ? 'rd-neg' : '') +
+      card('A receber (30 dias)', fmtR(f.aReceber), 'parcelas a vencer') +
+      card('Inadimplência', fmtR(f.vencido), 'parcelas vencidas', f.vencido > 0 ? 'rd-neg' : '') +
+      card('Ticket médio', fmtR(f.ticket), f.nTk + ' orçamento(s) aprovado(s)') + `</div>` +
+      (f.devedores.length ? `<h3 style="margin-top:12px">Maiores atrasos</h3>` + f.devedores.map(x => `<div class="rd-lin"><div class="rd-info"><div class="rd-nome">${esc(x.nome)}</div><div class="rd-sub">${x.d} dia(s) de atraso</div></div><b>${fmtR(x.v)}</b></div>`).join('') : '') +
+      (f.top.length ? `<h3 style="margin-top:12px">Procedimentos que mais rendem <span style="font-weight:400;color:var(--text3)">(estimativa: valor do orçamento dividido entre os itens)</span></h3>` + f.top.map(x => `<div class="rd-lin"><div class="rd-info"><div class="rd-nome">${esc(x.nome)}</div><div class="rd-sub">em ${x.n} orçamento(s)</div></div><b>${fmtR(x.v)}</b></div>`).join('') : '') + `</div>`;
+  }
+
   const br = iso => String(iso).slice(0, 10).split('-').reverse().join('/');
   const pac = id => Store.ativos().find(p => p.id === id);
 
@@ -37874,7 +37928,8 @@ const Radar = (() => {
       <button class="btn-tela" ${tel ? '' : 'disabled title="Sem telefone cadastrado"'} onclick="Radar.lembrar('${esc(x.ev.id || '')}','${esc(x.ev.pacId || '')}','${esc(x.ev.data)}','${esc(x.ev.hora || '')}','${esc(x.ev.nome)}')">📲 Lembrar</button></div>`; };
     document.getElementById('radar-corpo').innerHTML =
       `<div class="rd-sec"><h3>💰 Orçamentos parados — ${fmtR(soma)} em aberto</h3>${o.length ? o.map(linhaO).join('') : '<div class="rd-vazio">Nenhum orçamento em aberto.</div>'}</div>` +
-      `<div class="rd-sec"><h3>🗓️ Risco de falta — próximos 7 dias</h3>${f.length ? f.map(linhaF).join('') : '<div class="rd-vazio">Nenhuma consulta nos próximos 7 dias.</div>'}</div>`;
+      `<div class="rd-sec"><h3>🗓️ Risco de falta — próximos 7 dias</h3>${f.length ? f.map(linhaF).join('') : '<div class="rd-vazio">Nenhuma consulta nos próximos 7 dias.</div>'}</div>` +
+      htmlFinancas();
   }
 
   function lembrar(evId, pacId, data, hora, nome) {
