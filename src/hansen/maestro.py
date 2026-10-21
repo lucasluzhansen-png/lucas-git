@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 from hansen.agentes.recepcao import Recepcao
+from hansen.agentes.rotina import Rotina
 from hansen.cerebro import Cerebro
 from hansen.ledger import LedgerManager
 from hansen.tarefas import TarefaManager
@@ -25,7 +26,7 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops)]
+        self.agentes = [Recepcao(self.pops), Rotina()]
         self.tarefas = TarefaManager(ledger, self.pops["A-06"])
 
     def receber_mensagem(self, texto: str) -> Decisao:
@@ -44,9 +45,9 @@ class Maestro:
         # Regra de ouro: autonomia vem do nível do POP, não do código.
         autonomo = pop.automacao.nivel in AUTONOMOS and not pop.automacao.aprovacao_humana
         estado = "executado" if autonomo else "aguarda_humano"
-        return self._fechar(prop.pop_id, estado, prop.efeito, prop.detalhe, tipo, texto, dados)
+        return self._fechar(prop.pop_id, estado, prop.efeito, prop.detalhe, tipo, texto, dados, prop.tarefa)
 
-    def _fechar(self, pop_id, estado, acao, detalhe, tipo, texto, dados=None) -> Decisao:
+    def _fechar(self, pop_id, estado, acao, detalhe, tipo, texto, dados=None, tarefa_req=None) -> Decisao:
         self.ledger.registar(
             pop_id=pop_id,
             ator={"type": "agente_ia", "id": "maestro", "papel": "orquestrador"},
@@ -56,11 +57,13 @@ class Maestro:
             saida={"estado": estado, "detalhe": detalhe},
             privacidade={"dado_sensivel": True, "base_legal_lgpd": "execucao_contrato", "retencao_anos": 5},
         )
-        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe)
+        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req)
         return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None)
 
-    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe):
+    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe, tarefa_req=None):
         """Tudo que depende de gente vira tarefa cobrada pelo A-06; o que a IA executou sozinha, não."""
+        if tarefa_req and estado == "executado":  # pedido explícito do agente (ex.: A-06 IA_EXECUTA)
+            return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
         prioridade = "verde" if estado == "aguarda_humano" else "amarela"
