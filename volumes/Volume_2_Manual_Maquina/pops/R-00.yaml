@@ -1,0 +1,8 @@
+id: "R-00"
+versao: "14.0"
+manual: "Recepcao"
+titulo: "Primeiro Atendimento e Triagem"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Procura Endodontia, Exodontia, Periodontia ou Odontopediatria"
+    acao: "Bloquear agendamento. Clínica não realiza estas especialidades."

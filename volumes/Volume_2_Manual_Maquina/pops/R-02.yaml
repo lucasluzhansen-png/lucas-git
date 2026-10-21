@@ -1,0 +1,8 @@
+id: "R-02"
+versao: "14.0"
+manual: "Recepcao"
+titulo: "Agendamento e Confirmação"
+automacao: { nivel: "IA_SOZINHA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Paciente não responde até 2h antes"
+    acao: "Marcar risco de no-show e acionar telefone humano."

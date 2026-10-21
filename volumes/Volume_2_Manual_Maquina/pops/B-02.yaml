@@ -1,0 +1,6 @@
+id: "B-02"
+versao: "14.0"
+manual: "Auxiliar"
+titulo: "Teste Biológico da Autoclave"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+passos: [{numero: 3, tipo: "IA_Audita", descricao: "Após 24h, solicitar leitura e exigir registo no sistema."}]

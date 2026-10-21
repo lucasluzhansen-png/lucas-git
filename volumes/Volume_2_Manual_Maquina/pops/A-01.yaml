@@ -1,0 +1,6 @@
+id: "A-01"
+versao: "14.0"
+manual: "Rotina"
+titulo: "Abertura da Clínica"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+passos: [{numero: 3, tipo: "IA_Audita", descricao: "Registar abertura e notificar agenda."}]

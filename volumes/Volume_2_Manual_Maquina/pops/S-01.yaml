@@ -1,0 +1,8 @@
+id: "S-01"
+versao: "14.0"
+manual: "Conformidade"
+titulo: "Elaboração e Revisão SDBPF"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Funcionário sem Termo de Ciência eletrónico assinado"
+    acao: "Bloquear acesso à interface clínica."

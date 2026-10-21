@@ -1,0 +1,6 @@
+id: "C-19"
+versao: "14.0"
+manual: "Clinico"
+titulo: "Emergência Médica na Cadeira"
+automacao: { nivel: "HUMANO", aprovacao_humana: true }
+passos: [{numero: 4, tipo: "Humano", descricao: "Ligar 192 (SAMU). Hospital ref: Geral Roberto Santos. Não há DEA nem sedação."}]

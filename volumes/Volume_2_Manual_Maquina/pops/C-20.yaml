@@ -1,0 +1,6 @@
+id: "C-20"
+versao: "14.0"
+manual: "Clinico"
+titulo: "Antibioticoprofilaxia"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+passos: [{numero: 1, tipo: "IA_Audita", descricao: "Cruzar anamnese (válvulas) com agenda e disparar alerta ao CD."}]

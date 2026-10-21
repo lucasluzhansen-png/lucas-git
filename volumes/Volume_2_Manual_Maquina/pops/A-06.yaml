@@ -1,0 +1,10 @@
+id: "A-06"
+versao: "14.0"
+manual: "Rotina"
+titulo: "Acompanhamento de Pendências"
+automacao: { nivel: "IA_EXECUTA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Pendência Crítica (Vermelha) atinge 60 min sem resolução"
+    acao: "Chamada telefónica para RT."
+  - condicao: "Fecho de pendência sem anexo de evidência"
+    acao: "Rejeitar fecho."
