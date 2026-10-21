@@ -34,14 +34,14 @@ class TarefaManager:
 
     def _carregar(self):
         if self.arquivo and self.arquivo.exists():
-            for d in json.loads(self.arquivo.read_text()):
+            for d in json.loads(self.arquivo.read_text(encoding="utf-8")):
                 d["criada_em"] = datetime.fromisoformat(d["criada_em"])
                 self.tarefas[d["id"]] = Tarefa(**d)
 
     def salvar(self):
         if self.arquivo:
             dados = [{**asdict(t), "criada_em": t.criada_em.isoformat()} for t in self.tarefas.values()]
-            self.arquivo.write_text(json.dumps(dados, ensure_ascii=False, indent=2))
+            self.arquivo.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def alertas_pendentes(self) -> list[Tarefa]:
         return [t for t in self.tarefas.values() if t.alerta_pendente]

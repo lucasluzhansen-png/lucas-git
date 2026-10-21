@@ -29,7 +29,7 @@ class LedgerManager:
 
     def _ler_ultimo(self) -> dict | None:
         ficheiros = sorted(self.pasta.glob("*.json"))
-        return json.loads(ficheiros[-1].read_text()) if ficheiros else None
+        return json.loads(ficheiros[-1].read_text(encoding="utf-8")) if ficheiros else None
 
     def registar(self, *, pop_id, ator, acao, resultado="sucesso", entrada=None, saida=None, privacidade) -> dict:
         seq = (self._ultimo["sequence"] + 1) if self._ultimo else 1
@@ -53,7 +53,7 @@ class LedgerManager:
             "valor": base64.b64encode(self._chave.sign(evento["hash_evento"].encode())).decode(),
         }
         destino = self.pasta / f"{seq:010d}.json"
-        with open(destino, "x", encoding="utf-8") as f:  # "x": nunca sobrescreve (imutabilidade simulada)
+        with open(destino, "x", encoding="utf-8", newline="\n") as f:  # "x": nunca sobrescreve (imutabilidade simulada)
             json.dump(evento, f, ensure_ascii=False, indent=2)
         self._ultimo = evento
         return evento
@@ -61,7 +61,7 @@ class LedgerManager:
     def verificar(self) -> bool:
         anterior = GENESIS
         for f in sorted(self.pasta.glob("*.json")):
-            ev = json.loads(f.read_text())
+            ev = json.loads(f.read_text(encoding="utf-8"))
             sig = ev.pop("assinatura")
             if ev["hash_anterior"] != anterior:
                 return False

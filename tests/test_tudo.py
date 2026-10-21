@@ -45,7 +45,7 @@ def test_lembrete_formal_na_janela(tmp_path):
     dados = {"agora": "2026-01-05T10:00:00", "consulta_em": "2026-01-07T09:00:00", "respondeu": False, "nome": "Maria", "telefone": "+5571999990000"}
     m.processar("confirmacao", dados=dados)
     assert c.enviadas and c.enviadas[0][1].startswith("Prezado(a) Senhor(a) Maria")
-    assert "telefone" not in open(sorted((tmp_path / "ledger").glob("*.json"))[0]).read()  # PII fora do ledger
+    assert "telefone" not in open(sorted((tmp_path / "ledger").glob("*.json"))[0], encoding="utf-8").read()  # PII fora do ledger
 
 
 def test_sem_envio_fora_da_janela(tmp_path):

@@ -36,7 +36,7 @@ class Maestro:
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
         if estado:
             Path(estado).mkdir(parents=True, exist_ok=True)
-        self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text())) if self._arq_pausas and self._arq_pausas.exists() else set()
+        self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text(encoding="utf-8"))) if self._arq_pausas and self._arq_pausas.exists() else set()
         self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 
     def receber_mensagem(self, texto: str) -> Decisao:
@@ -72,7 +72,7 @@ class Maestro:
         if ok:
             (self.pausados.add if pausar else self.pausados.discard)(agente)
             if self._arq_pausas:
-                self._arq_pausas.write_text(json.dumps(sorted(self.pausados)))
+                self._arq_pausas.write_text(json.dumps(sorted(self.pausados)), encoding="utf-8")
         self.ledger.registar(
             pop_id="-", ator={"type": "humano", "id": por, "papel": papel}, acao=acao,
             resultado="sucesso" if ok else "falha", entrada={"agente": agente}, saida={},
