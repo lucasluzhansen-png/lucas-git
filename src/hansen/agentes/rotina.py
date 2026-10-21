@@ -5,6 +5,7 @@ PRIORIDADES = {"vermelha", "amarela", "verde"}
 
 
 class Rotina:
+    nome = "rotina"
     tipos = {"abertura", "pendencia"}
 
     def tratar(self, tipo: str, texto: str = "", dados: dict | None = None) -> Proposta | None:

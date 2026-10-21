@@ -1,8 +1,12 @@
 """Maestro: orquestra os POPs. Decide só o que o YAML permite; risco clínico vai para humano."""
+import json
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 
 from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
+from hansen.canal import Notificador
 from hansen.cerebro import Cerebro
 from hansen.ledger import LedgerManager
 from hansen.tarefas import TarefaManager
@@ -22,12 +26,18 @@ class Decisao:
 
 
 class Maestro:
-    def __init__(self, ledger: LedgerManager, pops: dict[str, POP] | None = None, cerebro: Cerebro | None = None):
+    def __init__(self, ledger: LedgerManager, pops: dict[str, POP] | None = None, cerebro: Cerebro | None = None,
+                 estado: Path | None = None, notificador: Notificador | None = None):
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
         self.agentes = [Recepcao(self.pops), Rotina()]
-        self.tarefas = TarefaManager(ledger, self.pops["A-06"])
+        self.notificador = notificador
+        self._arq_pausas = Path(estado) / "pausas.json" if estado else None
+        if estado:
+            Path(estado).mkdir(parents=True, exist_ok=True)
+        self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text())) if self._arq_pausas and self._arq_pausas.exists() else set()
+        self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 
     def receber_mensagem(self, texto: str) -> Decisao:
         """Entrada em texto livre: o cérebro classifica, o resto segue o YAML."""
@@ -38,6 +48,8 @@ class Maestro:
         agente = next((a for a in self.agentes if tipo in a.tipos), None)
         if agente is None:  # sem agente para o evento: nunca improvisar
             return self._fechar("-", "escalado_humano", "sem_agente", "Sem agente para este evento.", tipo, texto, dados)
+        if agente.nome in self.pausados:  # veto do RT: agente pausado nunca age
+            return self._fechar("-", "escalado_humano", "agente_pausado", f"Agente {agente.nome} pausado pelo RT.", tipo, texto, dados)
         prop = agente.tratar(tipo, texto, dados)
         if prop is None:
             return self._fechar("-", "escalado_humano", "sem_regra", "Nenhuma regra aplicável.", tipo, texto, dados)
@@ -47,16 +59,41 @@ class Maestro:
         estado = "executado" if autonomo else "aguarda_humano"
         return self._fechar(prop.pop_id, estado, prop.efeito, prop.detalhe, tipo, texto, dados, prop.tarefa)
 
+    def pausar(self, agente: str, por: str, papel: str) -> bool:
+        return self._alternar_pausa(agente, por, papel, pausar=True)
+
+    def retomar(self, agente: str, por: str, papel: str) -> bool:
+        return self._alternar_pausa(agente, por, papel, pausar=False)
+
+    def _alternar_pausa(self, agente, por, papel, pausar) -> bool:
+        """Só o RT pausa/retoma, e só agentes que existem. Tudo fica no ledger."""
+        acao = "pausar_agente" if pausar else "retomar_agente"
+        ok = papel == "rt" and agente in {a.nome for a in self.agentes}
+        if ok:
+            (self.pausados.add if pausar else self.pausados.discard)(agente)
+            if self._arq_pausas:
+                self._arq_pausas.write_text(json.dumps(sorted(self.pausados)))
+        self.ledger.registar(
+            pop_id="-", ator={"type": "humano", "id": por, "papel": papel}, acao=acao,
+            resultado="sucesso" if ok else "falha", entrada={"agente": agente}, saida={},
+            privacidade={"dado_sensivel": False, "base_legal_lgpd": "obrigacao_legal", "retencao_anos": 5},
+        )
+        return ok
+
     def _fechar(self, pop_id, estado, acao, detalhe, tipo, texto, dados=None, tarefa_req=None) -> Decisao:
+        dados = dados or {}
         self.ledger.registar(
             pop_id=pop_id,
             ator={"type": "agente_ia", "id": "maestro", "papel": "orquestrador"},
             acao=str(acao),
             resultado="sucesso",
-            entrada={"tipo": tipo, "texto": texto, "dados": dados or {}},
+            entrada={"tipo": tipo, "texto": texto, "dados": {k: v for k, v in dados.items() if k not in ("telefone", "nome")}},
             saida={"estado": estado, "detalhe": detalhe},
             privacidade={"dado_sensivel": True, "base_legal_lgpd": "execucao_contrato", "retencao_anos": 5},
         )
+        if acao == "enviar_lembrete" and estado == "executado" and self.notificador and dados.get("telefone"):
+            self.notificador.lembrete_paciente(
+                dados.get("nome", ""), dados["telefone"], datetime.fromisoformat(dados["consulta_em"]), datetime.fromisoformat(dados["agora"]))
         tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req)
         return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None)
 

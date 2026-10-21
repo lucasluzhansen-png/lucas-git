@@ -13,6 +13,7 @@ def _norm(t: str) -> str:
 
 
 class Recepcao:
+    nome = "recepcao"
     tipos = TIPOS
 
     def __init__(self, pops: dict[str, POP]):

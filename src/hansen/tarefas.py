@@ -1,6 +1,8 @@
 """Tarefas (POP A-06): agentes cobram humanos; o RT sempre pode vetar. Regras vêm do YAML."""
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Callable
 
 from hansen.ledger import LedgerManager
@@ -19,14 +21,34 @@ class Tarefa:
     criada_em: datetime
     estado: str = "aberta"  # aberta | escalada | fechada | vetada
     evidencia: str | None = None
+    alerta_pendente: bool = False
 
 
 class TarefaManager:
-    def __init__(self, ledger: LedgerManager, pop_a06: POP, agora: Callable[[], datetime] = lambda: datetime.now(timezone.utc)):
-        self.ledger, self.agora = ledger, agora
+    def __init__(self, ledger: LedgerManager, pop_a06: POP, agora: Callable[[], datetime] = lambda: datetime.now(timezone.utc), arquivo: Path | None = None):
+        self.ledger, self.agora, self.arquivo = ledger, agora, arquivo
         self.tarefas: dict[int, Tarefa] = {}
+        self._carregar()
         regra = {r.efeito: r for r in pop_a06.regras_de_decisao}
         self._limite = timedelta(minutes=regra["escalar"].parametros["minutos"])
+
+    def _carregar(self):
+        if self.arquivo and self.arquivo.exists():
+            for d in json.loads(self.arquivo.read_text()):
+                d["criada_em"] = datetime.fromisoformat(d["criada_em"])
+                self.tarefas[d["id"]] = Tarefa(**d)
+
+    def salvar(self):
+        if self.arquivo:
+            dados = [{**asdict(t), "criada_em": t.criada_em.isoformat()} for t in self.tarefas.values()]
+            self.arquivo.write_text(json.dumps(dados, ensure_ascii=False, indent=2))
+
+    def alertas_pendentes(self) -> list[Tarefa]:
+        return [t for t in self.tarefas.values() if t.alerta_pendente]
+
+    def alerta_enviado(self, id: int):
+        self.tarefas[id].alerta_pendente = False
+        self.salvar()
 
     def _log(self, acao, ator, t: Tarefa, resultado="sucesso", **saida):
         self.ledger.registar(
@@ -37,6 +59,7 @@ class TarefaManager:
     def criar(self, titulo, solicitante, responsavel, prioridade="verde") -> Tarefa:
         t = Tarefa(len(self.tarefas) + 1, titulo, solicitante, responsavel, prioridade, self.agora())
         self.tarefas[t.id] = t
+        self.salvar()
         self._log("criar_tarefa", {"type": "agente_ia", "id": "agente_pendencias", "papel": "rotina"}, t, responsavel=responsavel)
         return t
 
@@ -47,8 +70,9 @@ class TarefaManager:
             if t.estado == "aberta" and t.prioridade == "vermelha" and self.agora() - t.criada_em >= self._limite
         ]
         for t in novas:
-            t.estado = "escalada"
+            t.estado, t.alerta_pendente = "escalada", True
             self._log("escalar_para_rt", {"type": "agente_ia", "id": "agente_pendencias", "papel": "rotina"}, t, notificado="rt")
+        self.salvar()
         return novas
 
     def fechar(self, id: int, por: str, evidencia: str | None) -> bool:
@@ -60,6 +84,7 @@ class TarefaManager:
             self._log("fechar_tarefa", ator, t, resultado="falha", motivo="sem_evidencia")
             return False
         t.estado, t.evidencia = "fechada", evidencia
+        self.salvar()
         self._log("fechar_tarefa", ator, t, notificado=t.solicitante)  # notifica sempre o solicitante
         return True
 
@@ -71,5 +96,6 @@ class TarefaManager:
             self._log("vetar_tarefa", ator, t, resultado="falha", motivo="sem_autoridade")
             return False
         t.estado = "vetada"
+        self.salvar()
         self._log("vetar_tarefa", ator, t, motivo=motivo)
         return True
