@@ -31,9 +31,9 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - "Paciente atual" = telefone encontrado no cadastro (ainda não implementado: falta a base de pacientes).
 
 ## Respostas sobre a operação
-- Pacientes e agenda estão em um software de gestão odontológico (NOME AINDA NÃO INFORMADO: necessário para integrar).
-- Parceiros: o RT tem a lista (nomes ainda não cadastrados no sistema).
-- Canal hoje: WhatsApp Business (aplicativo). Envio automático exige a WhatsApp Business API (provedor oficial), diferente do app.
+- Pacientes e agenda: software **Clinus** (decisão do RT). Falta verificar se tem API/exportação para integrar.
+- Parceiros: o RT tem a lista e a passará **no final de tudo**. **LEMBRAR O RT disso ao concluir os próximos passos** (nome, especialidade, contato de cada parceiro).
+- Canal hoje: WhatsApp Business (aplicativo). **Decisão do RT: migrar para a WhatsApp Business API** (provedor oficial), necessária para envio automático. Falta escolher provedor, custo e consentimento do paciente.
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).
@@ -51,8 +51,9 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 - Persistência do ledger fora do disco local.
 
 ## Ordem sugerida
-1. Informar o nome do software de gestão e a lista de parceiros.
+1. Verificar integração com o Clinus (API/exportação) e escolher provedor da WhatsApp Business API.
 2. Mostrar `docs/fluxograma.html` e o painel à Dra. Jussara; anotar ajustes.
 3. Confirmar premissas com a equipe.
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.
 5. Só depois: WhatsApp real, Esterilização, AWS.
+6. **No final: lembrar o RT de passar a lista de parceiros.**
