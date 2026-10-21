@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (31 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (40 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Fluxograma: `docs/fluxograma.html`
 
@@ -22,16 +22,26 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `canal.py`: WhatsApp SIMULADO (tom formal, seg-sex 8h-18h). `agendador.py`: `tick()` com silêncio de madrugada.
 - `painel.py` e `simulacao.py`: página HTML e simulação com dados fictícios.
 
+## Decisões do RT já aplicadas (no YAML)
+- Madrugada = 0h às 7h (alertas silenciados até 7h). Janela de mensagens: seg-sex, 8h-18h.
+- Abertura (A-01) só registra; sem tarefa.
+- Aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento, para a Recepção. (A-06.yaml, `responsaveis`)
+- Fora do escopo (Endodontia, Exodontia, Periodontia, Odontopediatria): indicar profissionais parceiros. Paciente atual: dentista faz o 1º atendimento e encaminha.
+- Serviços da clínica (encaminhar para agendar): orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas em resina, próteses. Recepção agenda sozinha, inclusive 1ª consulta.
+- "Paciente atual" = telefone encontrado no cadastro (ainda não implementado: falta a base de pacientes).
+
+## Respostas sobre a operação
+- Pacientes e agenda estão em um software de gestão odontológico (NOME AINDA NÃO INFORMADO: necessário para integrar).
+- Parceiros: o RT tem a lista (nomes ainda não cadastrados no sistema).
+- Canal hoje: WhatsApp Business (aplicativo). Envio automático exige a WhatsApp Business API (provedor oficial), diferente do app.
+
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).
 - Lista de palavras de risco clínico (cerebro.py) e de procedimentos recusados (R-00.yaml): revisão clínica.
 - Número exato da RDC e regras do CFO: conferir em fonte oficial.
 
-## Problemas conhecidos (fazer primeiro)
-1. Texto das tarefas de "pausa", "sem agente" e "sem regra" é igual e confunde.
-2. "Clareamento" (serviço da clínica) cai em "sem regra" e vai para humano: falta regra de agendamento.
-3. Toda decisão pendente vira tarefa verde: pode gerar ruído.
-4. Texto do lembrete está no código; deveria estar no YAML.
+## Problemas conhecidos
+Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML foram corrigidos).
 
 ## Ainda não feito
 - WhatsApp real (exige conta Business, consentimento, base legal LGPD, contrato de processamento de dados).
@@ -41,7 +51,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Persistência do ledger fora do disco local.
 
 ## Ordem sugerida
-1. Corrigir os 4 problemas acima.
+1. Informar o nome do software de gestão e a lista de parceiros.
 2. Mostrar `docs/fluxograma.html` e o painel à Dra. Jussara; anotar ajustes.
 3. Confirmar premissas com a equipe.
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.
