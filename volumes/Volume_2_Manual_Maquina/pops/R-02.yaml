@@ -8,7 +8,7 @@ regras_de_decisao:
     acao: "Marcar risco de no-show e acionar telefone humano."
     efeito: "marcar_no_show"
     parametros: { horas_antes: 2 }
-  # ASSUMIDO: janela 8h-18h, seg-sex. Confirmar com a clínica.
+  # Janela confirmada pelo RT: seg-sex, 8h-18h.
   - condicao: "Envio de WhatsApp fora de segunda a sexta ou fora do horário comercial"
     acao: "Adiar envio para a próxima janela permitida."
     efeito: "adiar_envio"

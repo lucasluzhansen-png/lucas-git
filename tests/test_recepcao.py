@@ -37,3 +37,21 @@ def test_triagem_continua_via_agente(tmp_path):
     m = _m(tmp_path)
     assert m.processar("triagem", "quero tirar o siso").acao == "bloquear"
     assert m.ledger.verificar()
+
+
+def test_no_show_cria_tarefa_de_ligacao(tmp_path):
+    m = _m(tmp_path)
+    d = m.processar("confirmacao", dados=_d("2026-01-06T07:30:00", "2026-01-06T09:00:00"))
+    t = m.tarefas.tarefas[d.tarefa_id]
+    assert (t.responsavel, t.estado) == ("recepcao", "aberta") and "no-show" in t.titulo
+
+
+def test_decisao_pendente_de_humano_vira_tarefa(tmp_path):
+    m = _m(tmp_path)
+    assert m.processar("triagem", "quero tirar o siso").tarefa_id  # aguarda aprovação
+    assert m.processar("xyz", "?").tarefa_id  # sem agente
+
+
+def test_acao_autonoma_sem_pendencia_nao_cria_tarefa(tmp_path):
+    d = _m(tmp_path).processar("confirmacao", dados=_d(SEG_10H, "2026-01-07T09:00:00"))
+    assert d.tarefa_id is None

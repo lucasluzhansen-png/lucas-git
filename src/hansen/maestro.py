@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from hansen.agentes.recepcao import Recepcao
 from hansen.cerebro import Cerebro
 from hansen.ledger import LedgerManager
+from hansen.tarefas import TarefaManager
 from hansen.yaml_parser import POP, carregar_todos
 
 # Quem pode agir sozinho. Tudo o resto vira pedido de aprovação humana.
@@ -16,6 +17,7 @@ class Decisao:
     estado: str  # executado | aguarda_humano | escalado_humano
     acao: str
     detalhe: str
+    tarefa_id: int | None = None
 
 
 class Maestro:
@@ -24,6 +26,7 @@ class Maestro:
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
         self.agentes = [Recepcao(self.pops)]
+        self.tarefas = TarefaManager(ledger, self.pops["A-06"])
 
     def receber_mensagem(self, texto: str) -> Decisao:
         """Entrada em texto livre: o cérebro classifica, o resto segue o YAML."""
@@ -53,4 +56,17 @@ class Maestro:
             saida={"estado": estado, "detalhe": detalhe},
             privacidade={"dado_sensivel": True, "base_legal_lgpd": "execucao_contrato", "retencao_anos": 5},
         )
-        return Decisao(pop_id, estado, str(acao), detalhe)
+        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe)
+        return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None)
+
+    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe):
+        """Tudo que depende de gente vira tarefa cobrada pelo A-06; o que a IA executou sozinha, não."""
+        if estado == "executado" and acao != "marcar_no_show":
+            return None
+        prioridade = "verde" if estado == "aguarda_humano" else "amarela"
+        titulo = {
+            "marcar_no_show": "Ligar ao paciente: risco de no-show",
+            "aguarda_humano": f"Aprovar decisão da IA ({pop_id}): {acao}",
+            "escalado_humano": f"IA sem regra aplicável, tratar manualmente ({pop_id})",
+        }.get(acao if acao == "marcar_no_show" else estado)
+        return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", "recepcao", prioridade)
