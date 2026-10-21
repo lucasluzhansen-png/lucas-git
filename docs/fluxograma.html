@@ -1,0 +1,38 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fluxograma Hansen</title>
+<style>
+:root{--ia:#1565c0;--hum:#e65100;--reg:#2e7d32;--bg:#fafafa;--tx:#222}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--tx:#eee}}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);max-width:760px;margin:24px auto;padding:0 16px}
+h1{font-size:1.4rem} .leg span{display:inline-block;padding:4px 10px;border-radius:6px;color:#fff;margin:0 6px 6px 0;font-size:.85rem}
+.passo{display:grid;grid-template-columns:1fr 210px;gap:10px;align-items:center;margin:0}
+.caixa{border-radius:10px;padding:12px 14px;color:#fff;font-size:1rem}
+.caixa b{display:block;font-size:.8rem;opacity:.85;margin-bottom:2px}
+.ia{background:var(--ia)} .hum{background:var(--hum)} .reg{background:var(--reg)}
+.lado{font-size:.85rem;padding:8px 10px;border:2px dashed var(--hum);border-radius:10px}
+.seta{text-align:center;font-size:1.4rem;line-height:1.1;color:#888;margin:2px 0}
+@media(max-width:600px){.passo{grid-template-columns:1fr}}
+</style>
+<h1>Como a clínica funciona: ordem de cada passo</h1>
+<div class="leg"><span style="background:var(--ia)">IA</span><span style="background:var(--hum)">Humano</span><span style="background:var(--reg)">Registo (sempre)</span></div>
+
+<div class="passo"><div class="caixa ia"><b>1 · ENTRA UM EVENTO</b>Mensagem de paciente, confirmação de consulta, abertura da clínica ou pendência</div><div></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa ia"><b>2 · CÉREBRO (IA) ENTENDE</b>Só classifica o tipo de pedido. Não responde nem decide.</div><div class="lado">⚠ Palavra de urgência (sangramento, desmaio…) → <b>vai direto ao humano</b></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa ia"><b>3 · MAESTRO ACHA O AGENTE</b>Recepção (R-00, R-02) ou Rotina (A-01, A-06)</div><div class="lado">Nenhum agente serve → <b>humano</b></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa hum"><b>4 · O RT PAUSOU ESTE AGENTE?</b>O RT pode parar qualquer agente a qualquer hora</div><div class="lado">Sim → <b>humano trata</b></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa ia"><b>5 · AGENTE APLICA A REGRA DO YAML</b>Ex.: Endodontia → bloquear; sem resposta em 2h → risco de no-show</div><div class="lado">Nenhuma regra serve → <b>humano</b></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa ia"><b>6 · NÍVEL DE AUTONOMIA DO POP</b>Quem pode agir sozinho?</div><div class="lado"><b>IA_SOZINHA / IA_EXECUTA</b> → a IA faz<br><b>IA_AUDITA / IA_SUGERE</b> → humano aprova<br><b>HUMANO</b> → só humano</div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa reg"><b>7 · REGISTO NO LEDGER (sempre)</b>Evento assinado e encadeado. Qualquer alteração é detetada.</div><div></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa hum"><b>8 · PRECISA DE GENTE? VIRA TAREFA</b>Verde: aprovar · Amarela: tratar · Vermelha: urgente</div><div class="lado">Já resolvido pela IA → <b>sem tarefa</b></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa hum"><b>9 · COBRANÇA (A-06)</b>Vermelha parada 60 min → alerta ao RT.<br>Madrugada (0h–7h): alerta guardado e enviado às 7h.</div><div></div></div>
+<div class="seta">↓</div>
+<div class="passo"><div class="caixa hum"><b>10 · FECHO COM EVIDÊNCIA</b>Sem foto/anexo, o sistema recusa fechar.<br>O RT pode <b>vetar</b> qualquer tarefa. Quem pediu é sempre avisado.</div><div></div></div>
+</html>
