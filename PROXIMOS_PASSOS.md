@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (40 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (45 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Fluxograma: `docs/fluxograma.html`
 
@@ -28,10 +28,11 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento, para a Recepção. (A-06.yaml, `responsaveis`)
 - Fora do escopo (Endodontia, Exodontia, Periodontia, Odontopediatria): indicar profissionais parceiros. Paciente atual: dentista faz o 1º atendimento e encaminha.
 - Serviços da clínica (encaminhar para agendar): orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas em resina, próteses. Recepção agenda sozinha, inclusive 1ª consulta.
-- "Paciente atual" = telefone encontrado no cadastro (ainda não implementado: falta a base de pacientes).
+- "Paciente atual" = telefone encontrado no cadastro do Clinus (implementado via backup JSON; falta um jeito prático de atualizar o arquivo todo dia).
 
 ## Respostas sobre a operação
-- Pacientes e agenda: software **Clinus** (decisão do RT). Falta verificar se tem API/exportação para integrar.
+- Pacientes e agenda: **Clinus** = app próprio do RT (arquivo HTML único, "Dental Compass · Clinus v2.0"), dados no navegador (localStorage). **Não tem API.** Integração por arquivo: o RT exporta o JSON em "Dados e backup → Exportar JSON" e o sistema lê (`src/hansen/clinus.py`, somente leitura; guarda só id, nome e telefone). Formato: `{versao:"hrpg_v1", pacientes:[...], stores:{clinus_agenda_v2:"<json>"}}`.
+- Atenção (Clinus): a chave da API Anthropic fica salva no navegador, e o texto da anamnese vai à API quando o recurso está ligado (o próprio app avisa para exigir consentimento do paciente).
 - Parceiros: o RT tem a lista e a passará **no final de tudo**. **LEMBRAR O RT disso ao concluir os próximos passos** (nome, especialidade, contato de cada parceiro).
 - Canal hoje: WhatsApp Business (aplicativo). **Decisão do RT: migrar para a WhatsApp Business API** (provedor oficial), necessária para envio automático. Falta escolher provedor, custo e consentimento do paciente.
 
@@ -51,7 +52,7 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 - Persistência do ledger fora do disco local.
 
 ## Ordem sugerida
-1. Verificar integração com o Clinus (API/exportação) e escolher provedor da WhatsApp Business API.
+1. Exportar o backup do Clinus e rodar o sistema com ele (ver `hansen.clinus`); escolher provedor da WhatsApp Business API.
 2. Mostrar `docs/fluxograma.html` e o painel à Dra. Jussara; anotar ajustes.
 3. Confirmar premissas com a equipe.
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.

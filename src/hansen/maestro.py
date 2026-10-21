@@ -8,6 +8,7 @@ from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
 from hansen.canal import Notificador
 from hansen.cerebro import Cerebro
+from hansen.clinus import ClinusDados
 from hansen.ledger import LedgerManager
 from hansen.tarefas import TarefaManager
 from hansen.yaml_parser import POP, carregar_todos
@@ -27,12 +28,14 @@ class Decisao:
 
 class Maestro:
     def __init__(self, ledger: LedgerManager, pops: dict[str, POP] | None = None, cerebro: Cerebro | None = None,
-                 estado: Path | None = None, notificador: Notificador | None = None):
+                 estado: Path | None = None, notificador: Notificador | None = None,
+                 clinus: ClinusDados | None = None):
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
         self.agentes = [Recepcao(self.pops), Rotina()]
         self.notificador = notificador
+        self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
         if estado:
             Path(estado).mkdir(parents=True, exist_ok=True)
@@ -45,6 +48,9 @@ class Maestro:
         return self.processar(i.tipo, texto, dados)
 
     def processar(self, tipo: str, texto: str = "", dados: dict | None = None) -> Decisao:
+        dados = dict(dados or {})
+        if self.clinus and "paciente_atual" not in dados and dados.get("telefone"):
+            dados["paciente_atual"] = self.clinus.eh_paciente_atual(dados["telefone"])  # telefone no cadastro do Clinus
         agente = next((a for a in self.agentes if tipo in a.tipos), None)
         if agente is None:  # sem agente para o evento: nunca improvisar
             return self._fechar("-", "escalado_humano", "sem_agente", "Sem agente para este evento.", tipo, texto, dados)
