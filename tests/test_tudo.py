@@ -69,3 +69,11 @@ def test_agendador_madrugada_silencia_e_envia_as_7h(tmp_path):
     relogio[0] = datetime(2026, 1, 5, 7, 0)
     assert ag.tick(relogio[0]) == [1] and c.enviadas[0][1].startswith("ALERTA")
     assert ag.tick(relogio[0]) == []  # não repete
+
+
+def test_painel_gera_html(tmp_path):
+    from hansen.painel import gerar
+    m = _m(tmp_path)
+    m.processar("triagem", "quero um canal")
+    html = gerar(tmp_path, m.tarefas, m.ledger).read_text(encoding="utf-8")
+    assert "Painel Hansen" in html and "Registo íntegro" in html and "bloquear" in html

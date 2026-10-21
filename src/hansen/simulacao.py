@@ -1,5 +1,6 @@
 """Simulação de um dia na clínica (dados fictícios, relógio controlado, canal simulado)."""
 import tempfile
+import webbrowser
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -7,6 +8,7 @@ from hansen.agendador import Agendador
 from hansen.canal import CanalSimulado, Notificador
 from hansen.ledger import LedgerManager
 from hansen.maestro import Maestro
+from hansen.painel import gerar
 from hansen.yaml_parser import carregar_todos
 
 DIA = datetime(2026, 1, 6)  # terça-feira
@@ -77,6 +79,12 @@ def main():
     print(f"\nMensagens enviadas (simuladas): {len(canal.enviadas)}")
     print(f"Eventos no ledger: {n} | cadeia íntegra: {ledger.verificar()}")
     print(f"Ficheiros em: {base}")
+    painel = gerar(base, m.tarefas, ledger, canal.enviadas)
+    print(f"\nPAINEL: {painel}")
+    try:
+        webbrowser.open(painel.as_uri())  # abre no navegador (falha silenciosa em servidores)
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":
