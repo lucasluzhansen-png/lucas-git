@@ -2,6 +2,7 @@
 import unicodedata
 from dataclasses import dataclass
 
+from hansen.cerebro import Cerebro
 from hansen.ledger import LedgerManager
 from hansen.yaml_parser import POP, carregar_todos
 
@@ -23,9 +24,15 @@ class Decisao:
 
 
 class Maestro:
-    def __init__(self, ledger: LedgerManager, pops: dict[str, POP] | None = None):
+    def __init__(self, ledger: LedgerManager, pops: dict[str, POP] | None = None, cerebro: Cerebro | None = None):
         self.ledger = ledger
+        self.cerebro = cerebro
         self.pops = pops or carregar_todos()
+
+    def receber_mensagem(self, texto: str) -> Decisao:
+        """Entrada em texto livre: o cérebro classifica, o resto segue o YAML."""
+        i = self.cerebro.interpretar(texto)
+        return self.processar(i.tipo, texto)
 
     def processar(self, tipo: str, texto: str) -> Decisao:
         pop = self.pops.get(TIPO_PARA_POP.get(tipo, ""))
