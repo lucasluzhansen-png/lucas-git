@@ -18,6 +18,9 @@ class Regra(BaseModel):
     model_config = ConfigDict(extra="forbid")
     condicao: str
     acao: str
+    # Opcionais: tornam a regra executável pelo Maestro (sem lógica fixa no Python).
+    palavras_chave: list[str] = []
+    efeito: Literal["bloquear", "alertar_humano"] | None = None
 
 
 class Passo(BaseModel):
