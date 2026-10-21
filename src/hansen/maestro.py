@@ -100,10 +100,10 @@ class Maestro:
         if acao == "enviar_lembrete" and estado == "executado" and self.notificador and dados.get("telefone"):
             self.notificador.lembrete_paciente(
                 dados.get("nome", ""), dados["telefone"], datetime.fromisoformat(dados["consulta_em"]), datetime.fromisoformat(dados["agora"]))
-        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req)
+        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req, dados.get("consulta_id"))
         return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None)
 
-    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe, tarefa_req=None):
+    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe, tarefa_req=None, consulta_id=None):
         """Tudo que depende de gente vira tarefa cobrada pelo A-06; o que a IA executou sozinha, não."""
         if tarefa_req and estado == "executado":  # pedido explícito do agente (ex.: A-06 IA_EXECUTA)
             return self.tarefas.criar(**tarefa_req)
@@ -118,6 +118,8 @@ class Maestro:
             "encaminhar_agendamento": "Agendar paciente: serviço realizado pela clínica",
             "atendimento_clinico_humano": "Paciente atual: dentista faz o 1º atendimento e encaminha",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
+        if consulta_id:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
+            titulo += f" [consulta {consulta_id}]"
         quem = self.pops["A-06"].responsaveis
         chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)
