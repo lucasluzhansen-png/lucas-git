@@ -13,7 +13,7 @@ from hansen.tarefas import TarefaManager
 from hansen.yaml_parser import POP, carregar_todos
 
 # Quem pode agir sozinho. Tudo o resto vira pedido de aprovação humana.
-AUTONOMOS = {"IA_EXECUTA", "IA_SOZINHA"}
+AUTONOMOS = {"IA_AUDITA", "IA_EXECUTA", "IA_SOZINHA"}  # só agem sozinhos se aprovacao_humana=false no YAML
 
 
 @dataclass
@@ -110,4 +110,6 @@ class Maestro:
             "sem_agente": "Pedido sem agente responsável: tratar manualmente",
             "sem_regra": "A IA não encontrou regra para este pedido: tratar manualmente",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
-        return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", "recepcao", prioridade)
+        quem = self.pops["A-06"].responsaveis
+        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual"}.get(acao, "aprovacao_ia")
+        return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

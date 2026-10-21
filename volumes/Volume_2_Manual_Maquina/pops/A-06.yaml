@@ -11,3 +11,8 @@ regras_de_decisao:
   - condicao: "Fecho de pendência sem anexo de evidência"
     acao: "Rejeitar fecho."
     efeito: "rejeitar_fecho"
+responsaveis:
+  aprovacao_ia: "lucas"
+  alerta_rt: "lucas"
+  ligacao_no_show: "recepcao"
+  tratar_manual: "recepcao"

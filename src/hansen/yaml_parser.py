@@ -48,6 +48,7 @@ class POP(BaseModel):
     passos: list[Passo] = []
     gatilho: Gatilho | None = None
     mensagens: dict[str, str] = {}
+    responsaveis: dict[str, str] = {}
 
 
 def carregar_pop(path: Path) -> POP:

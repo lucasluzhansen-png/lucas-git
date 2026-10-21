@@ -20,9 +20,9 @@ def test_pendencia_mal_formada_escala_humano(tmp_path):
     assert d.estado == "escalado_humano"
 
 
-def test_abertura_aguarda_auditoria_humana(tmp_path):
+def test_abertura_so_registra_sem_tarefa(tmp_path):
     d = _m(tmp_path).processar("abertura", dados={"por": "jussara"})
-    assert (d.pop_id, d.estado) == ("A-01", "aguarda_humano")  # A-01 é IA_AUDITA
+    assert (d.pop_id, d.estado, d.tarefa_id) == ("A-01", "executado", None)  # decisão do RT
 
 
 def test_abertura_sem_responsavel_escala(tmp_path):

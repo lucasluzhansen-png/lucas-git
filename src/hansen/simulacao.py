@@ -33,7 +33,7 @@ def main():
     ledger = LedgerManager(base / "ledger")
     m = Maestro(ledger, estado=base / "estado", notificador=Notificador(canal, ledger, carregar_todos()["R-02"]))
     m.tarefas.agora = lambda: agora[0]
-    ag = Agendador(m.tarefas, m.notificador, "rt")
+    ag = Agendador(m.tarefas, m.notificador, carregar_todos()["A-06"].responsaveis["alerta_rt"])
 
     print("=== MADRUGADA ===")
     q = h(2)

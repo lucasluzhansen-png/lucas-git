@@ -80,3 +80,10 @@ def test_tarefa_igual_aberta_nao_duplica(tmp_path):
     t1 = m.processar("coisa", "x").tarefa_id
     t2 = m.processar("coisa", "y").tarefa_id
     assert t1 == t2
+
+
+def test_aprovacoes_vao_para_o_dr_lucas_e_ligacao_para_recepcao(tmp_path):
+    m = _m(tmp_path)
+    aprov = m.tarefas.tarefas[m.processar("triagem", "quero tirar o siso").tarefa_id]
+    ligar = m.tarefas.tarefas[m.processar("confirmacao", dados=_d("2026-01-06T07:30:00", "2026-01-06T09:00:00")).tarefa_id]
+    assert (aprov.responsavel, ligar.responsavel) == ("lucas", "recepcao")
