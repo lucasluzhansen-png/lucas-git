@@ -26,10 +26,10 @@ class Recepcao:
         return self._confirmacao(dados or {})
 
     def _triagem(self, texto: str) -> Proposta | None:
-        for r in self.r00:
-            if r.efeito and any(_norm(k) in texto for k in r.palavras_chave):
-                return Proposta("R-00", r.efeito, r.acao)
-        return None  # sem regra: o Maestro escala para humano
+        achadas = [r for r in self.r00 if r.efeito and any(_norm(k) in texto for k in r.palavras_chave)]
+        if len({r.efeito for r in achadas}) != 1:  # nenhuma regra, ou pedido ambíguo (ex.: canal + clareamento)
+            return None  # o Maestro escala para humano
+        return Proposta("R-00", achadas[0].efeito, achadas[0].acao)
 
     def _confirmacao(self, d: dict) -> Proposta | None:
         agora, consulta = datetime.fromisoformat(d["agora"]), datetime.fromisoformat(d["consulta_em"])

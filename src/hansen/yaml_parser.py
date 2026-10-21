@@ -20,7 +20,7 @@ class Regra(BaseModel):
     acao: str
     # Opcionais: tornam a regra executável pelo Maestro (sem lógica fixa no Python).
     palavras_chave: list[str] = []
-    efeito: Literal["bloquear", "alertar_humano", "escalar", "rejeitar_fecho", "marcar_no_show", "adiar_envio"] | None = None
+    efeito: Literal["bloquear", "alertar_humano", "escalar", "rejeitar_fecho", "marcar_no_show", "adiar_envio", "encaminhar_agendamento"] | None = None
     parametros: dict[str, int] = {}
 
 
@@ -47,6 +47,7 @@ class POP(BaseModel):
     regras_de_decisao: list[Regra] = []
     passos: list[Passo] = []
     gatilho: Gatilho | None = None
+    mensagens: dict[str, str] = {}
 
 
 def carregar_pop(path: Path) -> POP:

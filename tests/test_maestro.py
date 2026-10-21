@@ -14,9 +14,9 @@ def test_endodontia_bloqueada_com_aprovacao_humana(tmp_path):
     assert m.ledger.verificar()
 
 
-def test_servico_permitido_escala_humano(tmp_path):
+def test_servico_permitido_vai_para_agendamento_com_aprovacao(tmp_path):
     d = _m(tmp_path).processar("triagem", "Quero clareamento")
-    assert d.estado == "escalado_humano"
+    assert (d.acao, d.estado) == ("encaminhar_agendamento", "aguarda_humano")
 
 
 def test_evento_desconhecido_nunca_improvisa(tmp_path):

@@ -55,3 +55,28 @@ def test_decisao_pendente_de_humano_vira_tarefa(tmp_path):
 def test_acao_autonoma_sem_pendencia_nao_cria_tarefa(tmp_path):
     d = _m(tmp_path).processar("confirmacao", dados=_d(SEG_10H, "2026-01-07T09:00:00"))
     assert d.tarefa_id is None
+
+
+def test_clareamento_encaminha_para_agendamento(tmp_path):
+    d = _m(tmp_path).processar("triagem", "Quero fazer clareamento")
+    assert (d.pop_id, d.acao) == ("R-00", "encaminhar_agendamento")
+
+
+def test_pedido_ambiguo_vai_para_humano(tmp_path):
+    d = _m(tmp_path).processar("triagem", "Quero clareamento e tirar o siso")
+    assert d.estado == "escalado_humano"
+
+
+def test_titulos_de_tarefa_distintos(tmp_path):
+    m = _m(tmp_path)
+    m.pausar("recepcao", "lucas", "rt")
+    a = m.tarefas.tarefas[m.processar("triagem", "x").tarefa_id].titulo
+    b = m.tarefas.tarefas[m.processar("coisa", "x").tarefa_id].titulo
+    assert "pausado" in a and "sem agente" in b
+
+
+def test_tarefa_igual_aberta_nao_duplica(tmp_path):
+    m = _m(tmp_path)
+    t1 = m.processar("coisa", "x").tarefa_id
+    t2 = m.processar("coisa", "y").tarefa_id
+    assert t1 == t2

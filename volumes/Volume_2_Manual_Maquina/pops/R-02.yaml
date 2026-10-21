@@ -13,3 +13,6 @@ regras_de_decisao:
     acao: "Adiar envio para a próxima janela permitida."
     efeito: "adiar_envio"
     parametros: { hora_inicio: 8, hora_fim: 18 }
+mensagens:
+  lembrete_paciente: "Prezado(a) Senhor(a) {nome}, lembramos da sua consulta em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."
+  alerta_rt: "ALERTA: {titulo}"

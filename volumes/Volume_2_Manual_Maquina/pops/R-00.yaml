@@ -8,3 +8,7 @@ regras_de_decisao:
     acao: "Bloquear agendamento. Clínica não realiza estas especialidades."
     efeito: "bloquear"
     palavras_chave: ["canal", "endodontia", "tratamento de canal", "extrair", "extração", "exodontia", "siso", "periodontia", "gengiva", "odontopediatria", "criança", "filho", "filha"]
+  - condicao: "Procura Implante, Clareamento, Faceta em Resina ou Prótese"
+    acao: "Serviço realizado pela clínica. Encaminhar para agendamento."
+    efeito: "encaminhar_agendamento"
+    palavras_chave: ["implante", "clareamento", "clarear", "faceta", "lente de resina", "protese", "dentadura", "ponte"]

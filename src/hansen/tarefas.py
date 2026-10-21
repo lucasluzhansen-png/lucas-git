@@ -57,6 +57,9 @@ class TarefaManager:
         )
 
     def criar(self, titulo, solicitante, responsavel, prioridade="verde") -> Tarefa:
+        igual = next((x for x in self.tarefas.values() if x.estado in ("aberta", "escalada") and (x.titulo, x.responsavel) == (titulo, responsavel)), None)
+        if igual:  # mesma pendência já aberta: não duplica
+            return igual
         t = Tarefa(len(self.tarefas) + 1, titulo, solicitante, responsavel, prioridade, self.agora())
         self.tarefas[t.id] = t
         self.salvar()

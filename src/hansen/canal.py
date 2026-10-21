@@ -25,6 +25,7 @@ class Notificador:
     def __init__(self, canal: Canal, ledger: LedgerManager, pop_r02: POP):
         self.canal, self.ledger = canal, ledger
         self._p = {r.efeito: r.parametros for r in pop_r02.regras_de_decisao if r.efeito}["adiar_envio"]
+        self._msg = pop_r02.mensagens  # textos vêm do YAML
 
     def na_janela(self, agora: datetime) -> bool:
         return agora.weekday() < 5 and self._p["hora_inicio"] <= agora.hour < self._p["hora_fim"]
@@ -33,8 +34,7 @@ class Notificador:
         """Tom formal; só em seg-sex no horário comercial (R-02)."""
         if not self.na_janela(agora):
             return self._log("adiar_lembrete", destino, "fora_da_janela")
-        texto = (f"Prezado(a) Senhor(a) {nome}, lembramos da sua consulta em "
-                 f"{consulta_em:%d/%m às %H:%M}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia.")
+        texto = self._msg["lembrete_paciente"].format(nome=nome, data_hora=f"{consulta_em:%d/%m às %H:%M}")
         self.canal.enviar(destino, texto)
         return self._log("enviar_lembrete", destino, "enviado")
 
@@ -42,7 +42,7 @@ class Notificador:
         """Alerta interno ao RT. Madrugada: fica registado, mas silenciado até 07h (A-06)."""
         if agora.hour < SILENCIO_ATE_H:
             return self._log("alerta_rt", destino, "silenciado_ate_07h")
-        self.canal.enviar(destino, f"ALERTA: {titulo}")
+        self.canal.enviar(destino, self._msg["alerta_rt"].format(titulo=titulo))
         return self._log("alerta_rt", destino, "enviado")
 
     def _log(self, acao, destino, estado) -> str:

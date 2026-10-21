@@ -106,7 +106,8 @@ class Maestro:
         prioridade = "verde" if estado == "aguarda_humano" else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
-            "aguarda_humano": f"Aprovar decisão da IA ({pop_id}): {acao}",
-            "escalado_humano": f"IA sem regra aplicável, tratar manualmente ({pop_id})",
-        }.get(acao if acao == "marcar_no_show" else estado)
+            "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
+            "sem_agente": "Pedido sem agente responsável: tratar manualmente",
+            "sem_regra": "A IA não encontrou regra para este pedido: tratar manualmente",
+        }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", "recepcao", prioridade)
