@@ -1,5 +1,5 @@
 """Simulação de um dia na clínica (dados fictícios, relógio controlado, canal simulado)."""
-import tempfile
+import shutil
 import webbrowser
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,7 +25,10 @@ def mostra(quando, titulo, d):
 
 
 def main():
-    base = Path(tempfile.mkdtemp(prefix="simulacao_"))
+    base = Path("saida") / "simulacao"  # dentro da pasta do projeto (não na Temp do Windows)
+    shutil.rmtree(base, ignore_errors=True)  # cada execução começa limpa
+    base.mkdir(parents=True)
+    base = base.resolve()
     canal = CanalSimulado()
     ledger = LedgerManager(base / "ledger")
     m = Maestro(ledger, estado=base / "estado", notificador=Notificador(canal, ledger, carregar_todos()["R-02"]))
