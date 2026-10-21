@@ -57,3 +57,10 @@ def test_maestro_usa_clinus_para_paciente_atual(tmp_path):
     atual = m.processar("triagem", "preciso de canal", {"telefone": "71999990000"})
     novo = m.processar("triagem", "preciso de canal", {"telefone": "71911112222"})
     assert (atual.acao, novo.acao) == ("atendimento_clinico_humano", "bloquear")
+
+
+def test_diagnostico_nao_vaza_dados_de_paciente(tmp_path):
+    from hansen.clinus import diagnostico
+    txt = diagnostico(_backup(tmp_path))
+    assert "Pacientes: 2" in txt and "eventos: 4" in txt
+    assert "Maria" not in txt and "99999" not in txt and "000.000" not in txt
