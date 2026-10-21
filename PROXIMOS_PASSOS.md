@@ -8,8 +8,9 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (45 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (50 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
+- Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
 
 ## O que existe (`src/hansen/`)
@@ -40,6 +41,9 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).
 - Lista de palavras de risco clínico (cerebro.py) e de procedimentos recusados (R-00.yaml): revisão clínica.
 - Número exato da RDC e regras do CFO: conferir em fonte oficial.
+
+## Testado com backup real (21/10)
+Leitor entendeu o formato real do Clinus. Backup tinha 3 pacientes (só 1 com telefone) e 4 consultas; o sistema marcou corretamente "sem telefone: ligar manualmente". Qualidade dos telefones no Clinus é o ponto fraco.
 
 ## Problemas conhecidos
 Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML foram corrigidos).
