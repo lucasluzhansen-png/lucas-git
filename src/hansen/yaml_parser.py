@@ -20,7 +20,8 @@ class Regra(BaseModel):
     acao: str
     # Opcionais: tornam a regra executável pelo Maestro (sem lógica fixa no Python).
     palavras_chave: list[str] = []
-    efeito: Literal["bloquear", "alertar_humano"] | None = None
+    efeito: Literal["bloquear", "alertar_humano", "escalar", "rejeitar_fecho"] | None = None
+    parametros: dict[str, int] = {}
 
 
 class Passo(BaseModel):

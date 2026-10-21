@@ -6,5 +6,8 @@ automacao: { nivel: "IA_EXECUTA", aprovacao_humana: false }
 regras_de_decisao:
   - condicao: "Pendência Crítica (Vermelha) atinge 60 min sem resolução"
     acao: "Chamada telefónica para RT."
+    efeito: "escalar"
+    parametros: { minutos: 60 }
   - condicao: "Fecho de pendência sem anexo de evidência"
     acao: "Rejeitar fecho."
+    efeito: "rejeitar_fecho"
