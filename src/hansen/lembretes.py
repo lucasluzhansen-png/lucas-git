@@ -70,5 +70,11 @@ if __name__ == "__main__":  # python -m hansen.lembretes backup.json [AAAA-MM-DD
     canal = CanalSimulado()
     maestro = Maestro(led, estado=base / "estado", notificador=Notificador(canal, led, carregar_todos()["R-02"]))
     agora = datetime.fromisoformat(sys.argv[2]) if len(sys.argv) > 2 else datetime.now()
-    print(formatar(rodar(maestro, carregar_backup(Path(sys.argv[1])), agora)))
+    try:
+        dados = carregar_backup(Path(sys.argv[1]))
+    except FileNotFoundError:
+        raise SystemExit(f"Arquivo não encontrado: {sys.argv[1]}\nVeja o nome certo com: dir $HOME\\Downloads\\hansen-rpg-backup*")
+    except (ValueError, KeyError) as e:  # JSON inválido ou arquivo de outro tipo
+        raise SystemExit(f"Não consegui ler o backup: {e}")
+    print(formatar(rodar(maestro, dados, agora)))
     print(f"\nMensagens (simuladas): {len(canal.enviadas)} | ledger íntegro: {led.verificar()}")
