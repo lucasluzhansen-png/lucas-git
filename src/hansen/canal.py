@@ -1,4 +1,5 @@
 """Canal de mensagens. Hoje só simulado: envio real (WhatsApp Business) exige conta, credenciais e base legal LGPD."""
+import hashlib
 from datetime import datetime
 from typing import Protocol
 
@@ -49,6 +50,7 @@ class Notificador:
         self.ledger.registar(
             pop_id="R-02" if "lembrete" in acao else "A-06",
             ator={"type": "agente_ia", "id": "notificador", "papel": "comunicacao"},
-            acao=acao, entrada={"destino": destino}, saida={"estado": estado}, privacidade=PRIV,
+            # ledger é imutável: nunca grava o telefone, só um hash curto para correlacionar eventos
+            acao=acao, entrada={"destino_hash": hashlib.sha256(destino.encode()).hexdigest()[:10]}, saida={"estado": estado}, privacidade=PRIV,
         )
         return estado
