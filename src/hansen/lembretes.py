@@ -63,18 +63,19 @@ if __name__ == "__main__":  # python -m hansen.lembretes backup.json [AAAA-MM-DD
     from hansen.yaml_parser import carregar_todos
 
     if len(sys.argv) < 2:
-        raise SystemExit("Uso: python -m hansen.lembretes backup.json [AAAA-MM-DDTHH:MM]")
+        raise SystemExit("Uso: python -m hansen.lembretes backup.json [AAAA-MM-DDTHH:MM] [horas]")
     base = Path("saida") / "lembretes"
     base.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base / "ledger")
     canal = CanalSimulado()
     maestro = Maestro(led, estado=base / "estado", notificador=Notificador(canal, led, carregar_todos()["R-02"]))
-    agora = datetime.fromisoformat(sys.argv[2]) if len(sys.argv) > 2 else datetime.now()
+    agora = datetime.fromisoformat(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] != "agora" else datetime.now()
     try:
         dados = carregar_backup(Path(sys.argv[1]))
     except FileNotFoundError:
         raise SystemExit(f"Arquivo não encontrado: {sys.argv[1]}\nVeja o nome certo com: dir $HOME\\Downloads\\hansen-rpg-backup*")
     except (ValueError, KeyError) as e:  # JSON inválido ou arquivo de outro tipo
         raise SystemExit(f"Não consegui ler o backup: {e}")
-    print(formatar(rodar(maestro, dados, agora)))
+    horas = int(sys.argv[3]) if len(sys.argv) > 3 else 48  # janela de busca; ex.: 720 = 30 dias
+    print(formatar(rodar(maestro, dados, agora, horas)))
     print(f"\nMensagens (simuladas): {len(canal.enviadas)} | ledger íntegro: {led.verificar()}")
