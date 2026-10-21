@@ -39,10 +39,10 @@ class Maestro:
         self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text(encoding="utf-8"))) if self._arq_pausas and self._arq_pausas.exists() else set()
         self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 
-    def receber_mensagem(self, texto: str) -> Decisao:
+    def receber_mensagem(self, texto: str, dados: dict | None = None) -> Decisao:
         """Entrada em texto livre: o cérebro classifica, o resto segue o YAML."""
         i = self.cerebro.interpretar(texto)
-        return self.processar(i.tipo, texto)
+        return self.processar(i.tipo, texto, dados)
 
     def processar(self, tipo: str, texto: str = "", dados: dict | None = None) -> Decisao:
         agente = next((a for a in self.agentes if tipo in a.tipos), None)
@@ -103,13 +103,15 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao != "atendimento_clinico_humano" else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
             "sem_agente": "Pedido sem agente responsável: tratar manualmente",
             "sem_regra": "A IA não encontrou regra para este pedido: tratar manualmente",
+            "encaminhar_agendamento": "Agendar paciente: serviço realizado pela clínica",
+            "atendimento_clinico_humano": "Paciente atual: dentista faz o 1º atendimento e encaminha",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         quem = self.pops["A-06"].responsaveis
-        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual"}.get(acao, "aprovacao_ia")
+        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

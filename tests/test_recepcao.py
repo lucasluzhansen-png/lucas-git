@@ -87,3 +87,26 @@ def test_aprovacoes_vao_para_o_dr_lucas_e_ligacao_para_recepcao(tmp_path):
     aprov = m.tarefas.tarefas[m.processar("triagem", "quero tirar o siso").tarefa_id]
     ligar = m.tarefas.tarefas[m.processar("confirmacao", dados=_d("2026-01-06T07:30:00", "2026-01-06T09:00:00")).tarefa_id]
     assert (aprov.responsavel, ligar.responsavel) == ("lucas", "recepcao")
+
+
+def test_novos_servicos_encaminham(tmp_path):
+    m = _m(tmp_path)
+    for frase in ["Quero alinhador", "Preciso de uma coroa", "Faço bruxismo e queria placa", "Tenho PPR solto", "Queria lentes", "Quero restauração"]:
+        assert m.processar("triagem", frase).acao == "encaminhar_agendamento", frase
+
+
+def test_sigla_curta_nao_casa_dentro_de_palavra(tmp_path):
+    assert _m(tmp_path).processar("triagem", "Opte por me ligar depois").estado == "escalado_humano"
+
+
+def test_paciente_atual_com_servico_bloqueado_vai_para_dentista(tmp_path):
+    m = _m(tmp_path)
+    d = m.processar("triagem", "Estou com dor e preciso de canal", dados={"paciente_atual": True})
+    t = m.tarefas.tarefas[d.tarefa_id]
+    assert d.acao == "atendimento_clinico_humano" and t.responsavel == "lucas" and t.prioridade == "amarela"
+
+
+def test_agendamento_vai_para_recepcao(tmp_path):
+    m = _m(tmp_path)
+    t = m.tarefas.tarefas[m.processar("triagem", "Quero clareamento").tarefa_id]
+    assert t.responsavel == "recepcao" and "Agendar" in t.titulo
