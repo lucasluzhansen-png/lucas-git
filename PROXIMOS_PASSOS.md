@@ -57,7 +57,7 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 
 ## Ordem sugerida
 1. Exportar o backup do Clinus e rodar o sistema com ele (ver `hansen.clinus`); escolher provedor da WhatsApp Business API.
-2. Mostrar `docs/fluxograma.html` e o painel à Dra. Jussara; anotar ajustes.
+2. Fluxo v1 aprovado pelo Dr. Lucas em 22/10/2026 (ver `docs/APROVACOES.md`). Falta a assinatura da Dra. Jussara.
 3. Confirmar premissas com a equipe.
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.
 5. Só depois: WhatsApp real, Esterilização, AWS.
