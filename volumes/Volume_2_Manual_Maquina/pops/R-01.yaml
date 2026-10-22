@@ -1,0 +1,17 @@
+id: "R-01"
+versao: "1.0"
+manual: "Recepcao"
+titulo: "Sala de espera: atraso de mais de 15 minutos"
+# A IA só AVISA a Recepção; falar com o paciente é humano (oferecer água, informar a previsão com honestidade).
+# Decisão do RT em 22/10/2026: 15 minutos (regra do manual R-01). Depende de o Clinus registrar a chegada do paciente (status "chegou"/"aguardando").
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Paciente chegou, ainda não entrou em atendimento e passaram mais de 15 minutos do horário marcado"
+    acao: "Avisar a Recepção para ir até o paciente, oferecer água e informar a previsão."
+    efeito: "alertar_humano"
+    parametros: { minutos_atraso: 15 }
+  - condicao: "Há paciente seguinte com consulta na próxima hora enquanto o atraso persiste"
+    acao: "Avisar a Recepção para avisar o paciente seguinte da retenção, para que venha sem pressa."
+    efeito: "alertar_humano"
+    # ASSUMIDO: considerar o paciente seguinte se a consulta é dentro de 60 minutos.
+    parametros: { janela_proximo_min: 60 }

@@ -8,7 +8,14 @@ from pathlib import Path
 from hansen.caminhos import pasta_saida
 
 from hansen.clinus import ClinusDados, Consulta, carregar_backup
+import unicodedata
+
 from hansen.maestro import Decisao, Maestro
+from hansen.sincronizar import Chaves
+
+CAMPOS_TIPO = ("tipo", "categoria", "procedimento", "motivo", "titulo", "descricao", "servico")
+EM_LAB = ("enviado", "producao")
+CONCLUIDAS = ("instalado", "entregue", "cancelada", "cancelado")
 
 
 @dataclass
@@ -22,13 +29,42 @@ def _horas_antes(m: Maestro) -> int:
     return next(r.parametros["horas_antes"] for r in m.pops["R-02"].regras_de_decisao if r.efeito == "marcar_no_show")
 
 
+def _norm(s) -> str:
+    return unicodedata.normalize("NFKD", str(s or "").lower()).encode("ascii", "ignore").decode()
+
+
+def _peca_pendente(m: Maestro, clinus: ClinusDados, ev: dict) -> str | None:
+    """Prova/instalação de prótese sem a peça conferida contra a OS (LB-01). Retorna o motivo, ou None se pode confirmar."""
+    chaves = next(r.palavras_chave for r in m.pops["LB-01"].regras_de_decisao if r.palavras_chave)
+    texto = " ".join(_norm(ev.get(k)) for k in CAMPOS_TIPO)
+    if not any(k in texto for k in chaves):
+        return None
+    abertas = [o for o in clinus.lab_os if o.get("pacId") == ev.get("pacId") and (o.get("etapa") or o.get("status") or "") not in CONCLUIDAS]
+    if not abertas:
+        return "nenhuma OS de laboratório encontrada para este paciente"
+    if any(o.get("antiRefacaoEm") and (o.get("etapa") or o.get("status") or "") not in EM_LAB for o in abertas):
+        return None
+    return "a peça ainda não foi conferida contra a OS"
+
+
 def rodar(m: Maestro, clinus: ClinusDados, agora: datetime, horas: int = 48) -> list[Item]:
     arq = m.tarefas.arquivo.parent / "lembretes_enviados.json" if m.tarefas.arquivo else None
     enviados: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
     limite = _horas_antes(m)
     plano = []
+    eventos = {str(e.get("id")): e for e in clinus.agenda}
+    trava = Chaves(m, "confirmacao_peca")
     for c in clinus.proximas(agora, horas):
         chave = f"{c.id}|{c.inicio.isoformat()}"  # remarcar muda o horário → novo lembrete
+        motivo = _peca_pendente(m, clinus, eventos.get(c.id, {}))
+        if motivo:  # trava: prova/instalação não recebe confirmação automática enquanto a peça não estiver conferida
+            tchave = f"peca|{chave}"
+            trava.marcar_ativa(tchave)
+            d = m.processar("confirmacao_bloqueada", dados={"agora": agora.isoformat(), "ref_txt": f"consulta {c.id}",
+                                                           "detalhe": f"Confirmação suspensa: {motivo}."})
+            trava.registrar(tchave, d.tarefa_id)
+            plano.append(Item(c, None, f"confirmação SUSPENSA: {motivo} (tarefa #{d.tarefa_id})"))
+            continue
         if not c.telefone:
             plano.append(Item(c, None, "sem telefone: ligar manualmente"))
             continue
@@ -42,6 +78,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime, horas: int = 48) -> 
         if d.acao == "enviar_lembrete":
             enviados.add(chave)
         plano.append(Item(c, d))
+    trava.fechar_resolvidas()
     if arq:
         arq.write_text(json.dumps(sorted(enviados)), encoding="utf-8")
     return plano
