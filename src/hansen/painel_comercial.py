@@ -26,6 +26,14 @@ TIPOS_FINANCEIRO = {
 }
 
 
+AVISO_COMERCIAL = ("Sugestões da IA. <b>Revise o texto antes de enviar.</b> A IA não cita valores ou condições de pagamento (única exceção: "
+                   "o abatimento de aniversário no clareamento, definido pelo RT); se o paciente perguntar, responda você. "
+                   "Este arquivo tem nomes e telefones: uso interno, não compartilhe.")
+AVISO_FINANCEIRO = ("Sugestões da IA para a Recepção. <b>Revise o texto antes de enviar.</b> Cobrança sempre cordial: sem ameaça, sem constrangimento "
+                    "e sem expor a dívida a terceiros. Confira o valor e o vencimento no Clinus antes de falar com o paciente. "
+                    "Este arquivo tem nomes e telefones: uso interno, não compartilhe.")
+
+
 def cartoes(m: Maestro, clinus: ClinusDados, quem: str = "contato_comercial", tipos: dict | None = None) -> list[dict]:
     dono = m.pops["A-06"].responsaveis[quem]
     tipos = tipos or TIPOS
@@ -53,7 +61,8 @@ def cartoes(m: Maestro, clinus: ClinusDados, quem: str = "contato_comercial", ti
 
 
 def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None = None,
-          quem: str = "contato_comercial", tipos: dict | None = None, titulo: str = "Painel comercial") -> Path:
+          quem: str = "contato_comercial", tipos: dict | None = None, titulo: str = "Painel comercial",
+          aviso: str = AVISO_COMERCIAL) -> Path:
     cs = cartoes(m, clinus, quem, tipos)
     agora = agora or datetime.now()
     blocos = "".join(
@@ -76,8 +85,7 @@ h1{{font-size:1.3rem}} .aviso{{font-size:.85rem;opacity:.8;border-left:4px solid
 .b{{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px}} .sem{{color:#c62828;font-size:.9rem}}
 </style>
 <h1>{escape(titulo)} · {agora:%d/%m/%Y %H:%M}</h1>
-<div class="aviso">Sugestões da IA. <b>Revise o texto antes de enviar.</b> A IA não cita valores ou condições de pagamento (única exceção: o desconto de aniversário no clareamento, definido pelo RT); se o paciente perguntar, responda você.
-Este arquivo tem nomes e telefones: uso interno, não compartilhe.</div>
+<div class="aviso">{aviso}</div>
 {blocos}
 </html>"""
     destino.parent.mkdir(parents=True, exist_ok=True)

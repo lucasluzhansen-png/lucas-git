@@ -83,7 +83,7 @@ def formatar(itens: list[ItemF]) -> str:
 if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AAAA-MM-DDTHH:MM|agora]
     from hansen.canal import CanalSimulado, Notificador
     from hansen.ledger import LedgerManager
-    from hansen.painel_comercial import TIPOS_FINANCEIRO, cartoes, gerar
+    from hansen.painel_comercial import AVISO_FINANCEIRO, TIPOS_FINANCEIRO, cartoes, gerar
     from hansen.yaml_parser import carregar_todos
 
     if len(sys.argv) < 2:
@@ -100,7 +100,7 @@ if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AA
     except (ValueError, KeyError) as e:
         raise SystemExit(f"Não consegui ler o backup: {e}")
     print(formatar(rodar(maestro, dados, agora)))
-    painel = gerar(maestro, dados, base_dir / "painel_financeiro.html", agora, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro")
+    painel = gerar(maestro, dados, base_dir / "painel_financeiro.html", agora, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO)
     print(f"\nPAINEL FINANCEIRO ({len(cartoes(maestro, dados, 'financeiro', TIPOS_FINANCEIRO))} sugestões abertas): {painel.resolve()}")
     print(f"Ledger íntegro: {led.verificar()}")
     try:

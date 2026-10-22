@@ -82,3 +82,11 @@ def test_limite_diario(tmp_path):
     itens = rodar(m, c, AGORA)
     assert sum("tarefa #" in i.resultado and i.tipo == "atraso" for i in itens) == 10
     assert any("limite diário" in i.resultado for i in itens)
+
+
+def test_painel_financeiro_tem_aviso_proprio(tmp_path):
+    from hansen.painel_comercial import AVISO_FINANCEIRO, gerar
+    m, c = _setup(tmp_path)
+    rodar(m, c, AGORA)
+    html = gerar(m, c, tmp_path / "p.html", AGORA, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO).read_text(encoding="utf-8")
+    assert "Cobrança sempre cordial" in html and "clareamento" not in html and "Painel financeiro" in html
