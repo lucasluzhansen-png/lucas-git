@@ -1,0 +1,21 @@
+id: "CT-01"
+versao: "1.0"
+manual: "Contabilidade"
+titulo: "Contabilidade: fechamento mensal para o contador e apoio ao IR"
+# A IA só JUNTA os números do Clinus e COBRA a equipe. Não calcula imposto nem decide nada fiscal: isso é do contador humano.
+# Responsável: Recepção junta e envia; o Dr. Lucas confere (decisão do RT em 22/10/2026). Cobrança a partir do dia 1 (decisão do RT).
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Mês anterior ainda sem pacote enviado ao contador"
+    acao: "Avisar a Recepção para conferir o pacote do mês (entradas, despesas, compras) e enviar ao contador."
+    efeito: "alertar_humano"
+    # Decisão do RT: cobrar a partir do dia 1 do mês seguinte.
+    parametros: { dia_cobranca: 1 }
+  - condicao: "Época de preparar o Imposto de Renda do ano anterior"
+    acao: "Avisar para juntar documentos e gerar o resumo anual de receitas e despesas e os informes de pagamento por paciente."
+    efeito: "alertar_humano"
+    # ASSUMIDO: começar em fevereiro; alerta de prazo em maio (confirmar o calendário com o contador).
+    parametros: { ir_mes_inicio: 2, ir_mes_prazo: 5 }
+  - condicao: "Prazo do Imposto de Renda no mês de alerta"
+    acao: "Avisar que o prazo do IR está perto e confirmar com o contador que a entrega foi feita."
+    efeito: "alertar_humano"

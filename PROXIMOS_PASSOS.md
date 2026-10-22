@@ -119,3 +119,6 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 - Dois cliques em `abrir_maestro.bat` abre o painel no navegador (perfis Dr. Lucas/Recepção, "Feito", WhatsApp, arrastar backup).
 - Código: `src/hansen/app.py`, `src/hansen/web/painel.html`. Log: `app.log`.
 - Não testado em Windows real. Pendente: lista de profissionais parceiros (lembrar o Dr. Lucas).
+
+## Simulação de 4 meses
+`$env:PYTHONPATH="src"; python -m hansen.simulacao_clinica` (Clinus fictício + Maestro rodando todo dia útil). 151 testes.

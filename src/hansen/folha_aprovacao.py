@@ -7,7 +7,7 @@ from pathlib import Path
 from hansen.textos import modelo_aniversario, variaveis
 from hansen.yaml_parser import POP, carregar_todos
 
-POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02", "FN-03", "LB-01", "MA-01"]
+POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02", "FN-03", "LB-01", "CT-01", "JN-01", "MA-01"]
 NIVEL = {"HUMANO": "Só humano age", "IA_SUGERE": "A IA sugere; um humano decide", "IA_AUDITA": "A IA audita", "IA_EXECUTA": "A IA faz sozinha", "IA_SOZINHA": "A IA faz sozinha"}
 MUDOU = [
     "R-00: escopo ampliado (orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas, próteses encaminhados para agendar); serviço fora do escopo: indicar profissionais parceiros; paciente atual: dentista faz o 1º atendimento e encaminha.",
@@ -16,6 +16,8 @@ MUDOU = [
     "A-06: aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento para a Recepção.",
     "NOVOS: CM-01 (lembretes de relacionamento) e CM-02 (retomada de orçamentos, reativação e manutenção), aprovados em conteúdo pelo Dr. Lucas em 22/10/2026.",
     "NOVO: FN-01 (Financeiro: lembrete de parcela a vencer e cobrança de atraso). A IA só sugere; a Recepção revisa e envia. Atraso após 3 dias (decisão do RT). Ainda sem aprovação.",
+    "NOVO: JN-01 (Jornada do paciente: plano aprovado sem início agendado após 7 dias, tratamento parado após 30 dias sem consulta, alta sem retorno marcado após 7 dias). A IA só acompanha e sugere a mensagem; a Recepção revisa e envia; nada clínico. Ainda sem aprovação.",
+    "NOVO: CT-01 (Contabilidade: junta entradas, despesas pagas e compras do mês em planilhas e cobra a Recepção a partir do dia 1; em fevereiro-maio prepara o resumo anual e os informes por paciente para o IR). A IA só junta e cobra; NUNCA calcula imposto. Ainda sem aprovação.",
     "NOVO: LB-01 (Laboratório: OS atrasada, prazo vencendo, acima do prazo padrão de 21 dias, sem prazo registado, peça retornou sem conferência, peça chegou sem consulta marcada e OS com problema). A IA só acompanha PRAZOS e ETAPAS e cobra a equipe; NUNCA avalia a peça. Responsável: Recepção (confirmado pelo Dr. Lucas). Lê as OS do Clinus. Ainda sem aprovação.",
     "NOVO: MA-01 (Cobrança do Maestro: resumo às 8h30 e fechamento às 17h30, insiste a cada 2 h nas urgentes com tom crescente, avisa o Dr. Lucas do que está parado com a Recepção há 2+ dias e avisa quando o backup do Clinus está velho). Notificação do Windows, seg-sex 8h-18h. O Maestro cobra a EQUIPE sozinho; enviar mensagem a paciente e decidir continuam humanos. Tarefas agora também se fecham sozinhas quando o Clinus mostra que o problema acabou.",
     "NOVO: FN-03 (Convênio: guia não criada ou não enviada, autorização pendente, repasse atrasado, glosa sem recurso e fechamento mensal por operadora). Lê o módulo de guias do Clinus. A IA só sugere; responsável: Recepção. Ainda sem aprovação.",
@@ -32,6 +34,8 @@ PENDENTE = [
     "Ainda por desenhar: chamados de equipamento parados e diferença de caixa sem explicação (campos do Clinus a conferir).",
     "LB-01: valores e responsável (Recepção) confirmados pelo Dr. Lucas em 22/10/2026; falta testar com OS reais do Clinus. Já cruza “peça chegou” com a agenda; falta a regra “prova da barra + dentes na mesma sessão após o protocolo”.",
     "MA-01: confirmar valores assumidos (insistência a cada 2 h; escalar após 2 dias; backup antigo após 24 h; resumo 8h30; fechamento 17h30) e testar a notificação do Windows (testar_aviso.bat), que não pôde ser testada em Windows real.",
+    "JN-01: confirmar valores assumidos (7 dias para iniciar; 7 dias após a alta) e testar com consultas reais (status da agenda do Clinus); pode repetir com o CM-02 (paciente parado há 90 dias).",
+    "CT-01: confirmar o calendário do IR (assumido: preparar de fevereiro a maio) com o contador, e se compras e despesas devem sair por data de pagamento (o Clinus só traz o vencimento).",
     "Lista de profissionais parceiros (a ser entregue pelo Dr. Lucas).",
 ]
 

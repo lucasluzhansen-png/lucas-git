@@ -23,6 +23,9 @@ TIPOS = {
 TIPOS_FINANCEIRO = {
     "Cobrar parcela em atraso": ("cobrar_atraso", "FN-01", "Parcela em atraso"),
     "Lembrar parcela a vencer": ("lembrar_vencimento", "FN-01", "Parcela a vencer"),
+    "Jornada: plano aprovado": ("iniciar_tratamento", "JN-01", "Plano aprovado: agendar início"),
+    "Jornada: tratamento parado": ("tratamento_parado", "JN-01", "Tratamento parado"),
+    "Jornada: alta concluída": ("retorno_alta", "JN-01", "Alta: agendar retorno"),
 }
 
 
@@ -42,7 +45,7 @@ INTERNOS = {
 
 
 def cartoes_internos(m: Maestro) -> list[dict]:
-    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras", "laboratorio")}
+    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras", "laboratorio", "contabilidade")}
     saida = []
     for t in m.tarefas.tarefas.values():
         rotulo = next((r for k, r in INTERNOS.items() if t.titulo.startswith(k)), None)

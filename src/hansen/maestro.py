@@ -6,6 +6,8 @@ from pathlib import Path
 
 from hansen.agentes.comercial import Comercial
 from hansen.agentes.financeiro import Financeiro
+from hansen.agentes.contabilidade import Contabilidade
+from hansen.agentes.jornada import Jornada
 from hansen.agentes.laboratorio import Laboratorio
 from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
@@ -38,7 +40,7 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro(), Laboratorio()]
+        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro(), Laboratorio(), Contabilidade(), Jornada()]
         self.notificador = notificador
         self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
@@ -127,7 +129,7 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa", "cobrar_lab", "sla_lab", "conferir_peca", "os_problema", "agendar_peca") else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa", "cobrar_lab", "sla_lab", "conferir_peca", "os_problema", "agendar_peca", "enviar_contador", "prazo_ir") else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
@@ -160,6 +162,12 @@ class Maestro:
             "conferir_peca": "Laboratório: peça retornou, falta a conferência",
             "os_problema": "Laboratório: OS com problema",
             "agendar_peca": "Laboratório: peça chegou e não há consulta marcada",
+            "iniciar_tratamento": "Jornada: plano aprovado, agendar o início do tratamento",
+            "tratamento_parado": "Jornada: tratamento parado, agendar a próxima sessão",
+            "retorno_alta": "Jornada: alta concluída, agendar o retorno",
+            "enviar_contador": "Contabilidade: enviar o fechamento do mês ao contador",
+            "preparar_ir": "Contabilidade: preparar documentos e resumo do IR",
+            "prazo_ir": "Contabilidade: prazo do IR perto, confirmar entrega com o contador",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
             titulo += f" [{ref}]"
@@ -169,5 +177,7 @@ class Maestro:
                  "agendar_preventiva": "financeiro", "fechar_caixa": "financeiro", "criar_guia": "financeiro", "enviar_guia": "financeiro",
                  "cobrar_autorizacao": "financeiro", "cobrar_repasse": "financeiro", "recurso_glosa": "financeiro", "conferir_convenio": "financeiro",
                  "cobrar_lab": "laboratorio", "confirmar_prazo_lab": "laboratorio", "sla_lab": "laboratorio", "registrar_prazo_lab": "laboratorio",
-                 "conferir_peca": "laboratorio", "os_problema": "laboratorio", "agendar_peca": "laboratorio"}.get(acao, "aprovacao_ia")
+                 "conferir_peca": "laboratorio", "os_problema": "laboratorio", "agendar_peca": "laboratorio",
+                 "enviar_contador": "contabilidade", "preparar_ir": "contabilidade", "prazo_ir": "contabilidade",
+                 "iniciar_tratamento": "jornada", "tratamento_parado": "jornada", "retorno_alta": "jornada"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

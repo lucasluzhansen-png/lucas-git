@@ -1,0 +1,27 @@
+id: "JN-01"
+versao: "1.0"
+manual: "Jornada"
+titulo: "Jornada do paciente: do plano aprovado à alta e ao retorno"
+# A IA só ACOMPANHA a jornada e SUGERE o contato; a Recepção revisa e envia. Nunca decide nada clínico nem cita valores.
+# Etapas vigiadas (decisão do RT em 22/10/2026): plano aprovado, tratamento em andamento, alta e retorno. Responsável: Recepção.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Plano aprovado, sem consulta marcada e sem atendimento depois da aprovação"
+    acao: "Sugerir à Recepção agendar o início do tratamento."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 7 dias depois da aprovação.
+    parametros: { dias_inicio: 7 }
+  - condicao: "Tratamento em andamento, sem consulta marcada e sem atendimento há mais dias que o limite"
+    acao: "Sugerir à Recepção contato para agendar a próxima sessão (tratamento parado)."
+    efeito: "alertar_humano"
+    # Decisão do RT: parado após 30 dias.
+    parametros: { dias_parado_tratamento: 30 }
+  - condicao: "Tratamento concluído (alta) sem retorno ou manutenção marcados"
+    acao: "Sugerir à Recepção agendar o retorno de acompanhamento."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 7 dias depois da alta.
+    parametros: { dias_alta: 7 }
+mensagens:
+  iniciar_tratamento: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de agendar o início do seu tratamento. Qual o melhor dia e horário para o(a) senhor(a)?"
+  tratamento_parado: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Notamos que seu tratamento está aguardando a próxima sessão. Podemos agendar um horário conveniente?"
+  retorno_alta: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Seu tratamento foi concluído e gostaríamos de agendar uma consulta de acompanhamento. Podemos marcar um horário?"
