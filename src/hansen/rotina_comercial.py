@@ -8,6 +8,7 @@ from pathlib import Path
 
 from hansen.clinus import ClinusDados, carregar_backup
 from hansen.maestro import Maestro
+from hansen.sincronizar import Chaves
 
 
 @dataclass
@@ -50,6 +51,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
     dias_man = _params(m, "CM-02", "revisar_manutencao")["dias_manutencao"]
     itens: list[ItemC] = []
     base = {"agora": agora.isoformat()}
+    chaves = Chaves(m, "comercial")
 
     def feito(tipo, chave, nome, d, sem_marcar_se_adiado=True):
         if d.envio == "enviado" or d.tarefa_id:
@@ -69,6 +71,8 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
             continue
         d = m.processar("aniversario", dados={**base, "ref": p["id"], "nome": p["nome"], "telefone": p["tel"], "consentimento": p["consentimento"]})
         feito("aniversario", chave, p["nome"], d)
+        if d.tarefa_id:
+            chaves.registrar(f"aniv|{p['id']}|{hoje.year}", d.tarefa_id)
 
     # 2) Retornos agendados (CM-01)
     for r in clinus.retornos:
@@ -111,6 +115,8 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
                 candidatos.append((1, -dias, "manutencao_vencida", p, dias))
         elif ult and dias >= pr["dias_parado"] and p["zona"] != "perdidos" and p["id"] not in futuros:
             candidatos.append((2, -dias, "paciente_parado", p, dias))
+    for _, _, tipo, p, _d in candidatos:
+        chaves.marcar_ativa(f"{tipo}|{p['id']}")  # a situação existe, mesmo que hoje não gere sugestão nova
     for _, _, tipo, p, dias in sorted(candidatos, key=lambda c: (c[0], c[1])):
         if recente(p["id"]):
             continue
@@ -118,10 +124,17 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
             itens.append(ItemC(tipo, p["nome"], "adiado: limite diário de sugestões atingido"))
             continue
         d = m.processar(tipo, dados={**base, "ref": p["id"], "dias": dias})
+        chaves.registrar(f"{tipo}|{p['id']}", d.tarefa_id)
         contatos[p["id"]] = hoje.isoformat()
         usadas += 1
         itens.append(ItemC(tipo, p["nome"], f"{d.acao} (tarefa #{d.tarefa_id}, {dias} dias)"))
 
+    # aniversário sem consentimento: a situação vale só no dia do aniversário
+    for p in pacs:
+        nasc = _data(p["nascimento"])
+        if nasc and (nasc.month, nasc.day) == (hoje.month, hoje.day):
+            chaves.marcar_ativa(f"aniv|{p['id']}|{hoje.year}")
+    chaves.fechar_resolvidas()
     if arq:
         arq.write_text(json.dumps({"feitos": sorted(feitos), "contatos": contatos}), encoding="utf-8")
     return itens

@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from hansen.clinus import ClinusDados, carregar_backup, data_br, guia_atrasada, guia_calc, guia_status, op_nome, situacao_parcelas
 from hansen.maestro import Maestro
+from hansen.sincronizar import Chaves
 
 
 @dataclass
@@ -38,6 +39,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
     usadas = sum(1 for v in avisos.values() if v == hoje.isoformat())
     base = {"agora": agora.isoformat()}
 
+    chaves = Chaves(m, "parcelas")
     pacs = sorted((p for p in clinus.por_id.values() if p["ativo"] and p["parcelas"]), key=lambda p: str(p["id"]))
     cobrar, lembrar = [], []
     for p in pacs:
@@ -45,9 +47,11 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
         atras = [x for x in sit if x["atraso"] >= pa["dias_atraso"]]
         if atras:
             cobrar.append((max(x["atraso"] for x in atras), p, atras))
+            chaves.marcar_ativa(f"cobranca|{p['id']}")
         for x in sit:
             if not x["quitada"] and x["dias_ate_vencer"] is not None and 0 <= x["dias_ate_vencer"] <= pv["dias_antes"]:
                 lembrar.append((p, x))
+                chaves.marcar_ativa(f"venc|{p['id']}|{x['venc']}")
 
     for dias, p, atras in sorted(cobrar, key=lambda c: -c[0]):  # maiores atrasos primeiro
         ult = avisos.get(p["id"])
@@ -59,6 +63,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
         d = m.processar("parcela_atrasada", dados={**base, "ref": p["id"], "n": len(atras), "dias": dias,
                                                    "desde": _ddmm(min(x["venc"] for x in atras))})
         avisos[p["id"]] = hoje.isoformat()
+        chaves.registrar(f"cobranca|{p['id']}", d.tarefa_id)
         usadas += 1
         itens.append(ItemF("atraso", p["nome"], f"{len(atras)} parcela(s), {dias} dias de atraso (tarefa #{d.tarefa_id})"))
 
@@ -68,8 +73,11 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
             continue
         d = m.processar("parcela_a_vencer", dados={**base, "ref": p["id"], "vence": _ddmm(x["venc"])})
         feitos.add(chave)
+        chaves.registrar(chave, d.tarefa_id)
         itens.append(ItemF("a_vencer", p["nome"], f"vence em {_ddmm(x['venc'])} (tarefa #{d.tarefa_id})"))
 
+    feitos &= chaves.ativas  # situação que sumiu e voltar a existir deve gerar novo aviso
+    chaves.fechar_resolvidas()
     if arq:
         arq.write_text(json.dumps({"cobrancas": avisos, "feitos": sorted(feitos)}), encoding="utf-8")
     return itens
@@ -97,12 +105,15 @@ def rodar_clinica(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[Item
     hoje = agora.date()
     itens: list[ItemF] = []
     base = {"agora": agora.isoformat()}
+    chaves = Chaves(m, "clinica")
 
     def sugerir(chave, tipo_evento, rotulo, nome, detalhe, ref, **extra):
+        chaves.marcar_ativa(chave)
         if chave in feitos:
             return
         d = m.processar(tipo_evento, dados={**base, "ref_txt": ref, "detalhe": detalhe, **extra})
         feitos.add(chave)
+        chaves.registrar(chave, d.tarefa_id)
         itens.append(ItemF(rotulo, nome, f"{detalhe} (tarefa #{d.tarefa_id})"))
 
     # 1) Contas a pagar
@@ -152,6 +163,8 @@ def rodar_clinica(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[Item
             sugerir(f"caixa|{dia}", "caixa_aberto", "caixa", f"{dia:%d/%m}", f"Caixa de {dia:%d/%m} sem fechamento registado", f"caixa {dia}")
 
     itens += _convenio(m, clinus, agora, feitos, sugerir)
+    feitos &= chaves.ativas
+    chaves.fechar_resolvidas()
     if arq:
         arq.write_text(json.dumps(sorted(feitos)), encoding="utf-8")
     return itens

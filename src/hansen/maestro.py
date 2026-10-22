@@ -43,6 +43,7 @@ class Maestro:
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
         if estado:
             Path(estado).mkdir(parents=True, exist_ok=True)
+        self.resolvidas_auto = 0  # tarefas fechadas sozinhas porque o Clinus mostra que a situação acabou
         self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text(encoding="utf-8"))) if self._arq_pausas and self._arq_pausas.exists() else set()
         self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 

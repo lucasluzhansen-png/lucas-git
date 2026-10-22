@@ -91,6 +91,16 @@ class TarefaManager:
         self._log("fechar_tarefa", ator, t, notificado=t.solicitante)  # notifica sempre o solicitante
         return True
 
+    def resolver_automatico(self, id: int, motivo: str) -> bool:
+        """Fecha uma tarefa porque o Clinus mostra que a situação acabou (ator: agente, não humano)."""
+        t = self.tarefas.get(id)
+        if not t or t.estado not in ("aberta", "escalada"):
+            return False
+        t.estado, t.evidencia, t.alerta_pendente = "fechada", motivo, False
+        self.salvar()
+        self._log("resolver_automatico", {"type": "agente_ia", "id": "maestro", "papel": "orquestrador"}, t, motivo=motivo)
+        return True
+
     def vetar(self, id: int, por: str, papel: str, motivo: str) -> bool:
         """Só o RT veta. Tentativas de outros papéis ficam registradas como falha."""
         t = self.tarefas[id]
