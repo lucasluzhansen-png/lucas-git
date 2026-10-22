@@ -110,12 +110,6 @@ def diagnostico(caminho: Path) -> str:
     ])
 
 
-if __name__ == "__main__":  # python -m hansen.clinus backup.json
-    import sys
-
-    print(diagnostico(Path(sys.argv[1])) if len(sys.argv) > 1 else "Uso: python -m hansen.clinus backup.json")
-
-
 def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
     """Contagens para o agente Comercial, sem nomes nem telefones."""
     from collections import Counter
@@ -150,3 +144,9 @@ def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
         f"Consentimento comercial registado: {sum(1 for p in ativos if p['consentimento'])}",
         f"Retornos: {len(d.retornos)} | campos: {sorted(campos_ret)}",
     ]
+
+
+if __name__ == "__main__":  # python -m hansen.clinus backup.json
+    import sys
+
+    print(diagnostico(Path(sys.argv[1])) if len(sys.argv) > 1 else "Uso: python -m hansen.clinus backup.json")

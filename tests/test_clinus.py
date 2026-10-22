@@ -64,3 +64,14 @@ def test_diagnostico_nao_vaza_dados_de_paciente(tmp_path):
     txt = diagnostico(_backup(tmp_path))
     assert "Pacientes: 2" in txt and "eventos: 4" in txt
     assert "Maria" not in txt and "99999" not in txt and "000.000" not in txt
+
+
+def test_diagnostico_roda_pela_linha_de_comando(tmp_path):
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"), "PYTHONIOENCODING": "utf-8"}
+    r = subprocess.run([sys.executable, "-m", "hansen.clinus", str(_backup(tmp_path))], capture_output=True, text=True, env=env)
+    assert r.returncode == 0, r.stderr
+    assert "Pacientes ativos" in r.stdout and "Maria" not in r.stdout
