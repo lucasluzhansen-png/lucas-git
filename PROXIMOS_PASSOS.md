@@ -41,7 +41,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Parceiros: o RT tem a lista e a passará **no final de tudo**. **LEMBRAR O RT disso ao concluir os próximos passos** (nome, especialidade, contato de cada parceiro).
 - Canal hoje: WhatsApp Business (aplicativo). **Decisão do RT: migrar para a WhatsApp Business API** (provedor oficial), necessária para envio automático. Falta escolher provedor, custo e consentimento do paciente.
 
-## Agente Comercial (decisões do RT, 22/10/2026; POPs novos CM-01 e CM-02, AINDA NÃO APROVADOS)
+## Agente Comercial (decisões do RT, 22/10/2026; POPs novos CM-01 e CM-02; folha dos POPs aprovada pelo Dr. Lucas em 22/10/2026, falta a Dra. Jussara e as 5 pendências da folha)
 - Faz: orçamentos em aberto ("vai pensar"), reativar pacientes parados, aniversariantes, retornos e manutenção.
 - CM-01 (IA envia sozinha): aniversário e lembrete de retorno agendado. Aniversário só com consentimento registado no Clinus (campo `consentimentoComercial`; HOJE NÃO EXISTE no Clinus, então tudo vira tarefa manual até o RT criar esse registo).
 - CM-02 (IA só sugere): retomada de orçamento e reativação; tarefa para o Dr. Lucas.
@@ -72,7 +72,7 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 
 ## Ordem sugerida
 1. Exportar o backup do Clinus e rodar o sistema com ele (ver `hansen.clinus`); escolher provedor da WhatsApp Business API.
-2. Fluxo v1 aprovado pelo Dr. Lucas em 22/10/2026 (ver `docs/APROVACOES.md`). Falta a assinatura da Dra. Jussara.
+2. Fluxo v1 e folha dos POPs aprovados pelo Dr. Lucas em 22/10/2026 (ver `docs/APROVACOES.md`). Falta a assinatura da Dra. Jussara e fechar as 5 pendências da folha.
 3. Confirmar premissas com a equipe.
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.
 5. Só depois: WhatsApp real, Esterilização, AWS.
