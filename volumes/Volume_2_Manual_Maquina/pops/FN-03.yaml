@@ -1,0 +1,33 @@
+id: "FN-03"
+versao: "1.0"
+manual: "Financeiro"
+titulo: "Convênio: guias, autorizações, repasses e glosas"
+# Decisão do RT (22/10/2026): a IA só sugere e cobra a equipe; responsável: Recepção. Lê o módulo "Faturamento de convênio" (guias) do Clinus.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Tratamento de convênio aprovado, paciente não encerrado e nenhuma guia criada"
+    acao: "Avisar a Recepção para criar a guia do tratamento no Clinus."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 3 dias depois da aprovação do orçamento.
+    parametros: { dias_sem_guia: 3 }
+  - condicao: "Guia criada e ainda não enviada ao convênio"
+    acao: "Avisar a Recepção para enviar a guia ao convênio."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 3 dias depois da criação.
+    parametros: { dias_guia_criada: 3 }
+  - condicao: "Guia enviada e sem aprovação/autorização do convênio"
+    acao: "Avisar a Recepção para cobrar a autorização do convênio."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 7 dias depois do envio.
+    parametros: { dias_autorizacao: 7 }
+  - condicao: "Repasse atrasado (mesma regra do Clinus: previsão vencida, sem repasse registado e guia não paga)"
+    acao: "Avisar a Recepção para cobrar o repasse da operadora."
+    efeito: "alertar_humano"
+  - condicao: "Guia glosada sem recurso registado"
+    acao: "Avisar a Recepção e o Dr. Lucas para avaliar o recurso da glosa antes que o prazo acabe."
+    efeito: "alertar_humano"
+  - condicao: "Fechamento do mês: operadora com guias do mês anterior ainda a receber"
+    acao: "Avisar a Recepção para conferir os repasses da operadora."
+    efeito: "alertar_humano"
+    # ASSUMIDO: a partir do dia 5 de cada mês.
+    parametros: { dia_fechamento: 5 }

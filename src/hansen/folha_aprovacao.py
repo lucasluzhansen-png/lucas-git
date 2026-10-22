@@ -7,7 +7,7 @@ from pathlib import Path
 from hansen.textos import modelo_aniversario, variaveis
 from hansen.yaml_parser import POP, carregar_todos
 
-POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02"]
+POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02", "FN-03"]
 NIVEL = {"HUMANO": "Só humano age", "IA_SUGERE": "A IA sugere; um humano decide", "IA_AUDITA": "A IA audita", "IA_EXECUTA": "A IA faz sozinha", "IA_SOZINHA": "A IA faz sozinha"}
 MUDOU = [
     "R-00: escopo ampliado (orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas, próteses encaminhados para agendar); serviço fora do escopo: indicar profissionais parceiros; paciente atual: dentista faz o 1º atendimento e encaminha.",
@@ -16,6 +16,7 @@ MUDOU = [
     "A-06: aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento para a Recepção.",
     "NOVOS: CM-01 (lembretes de relacionamento) e CM-02 (retomada de orçamentos, reativação e manutenção), aprovados em conteúdo pelo Dr. Lucas em 22/10/2026.",
     "NOVO: FN-01 (Financeiro: lembrete de parcela a vencer e cobrança de atraso). A IA só sugere; a Recepção revisa e envia. Atraso após 3 dias (decisão do RT). Ainda sem aprovação.",
+    "NOVO: FN-03 (Convênio: guia não criada ou não enviada, autorização pendente, repasse atrasado, glosa sem recurso e fechamento mensal por operadora). Lê o módulo de guias do Clinus. A IA só sugere; responsável: Recepção. Ainda sem aprovação.",
     "NOVO: FN-02 (Financeiro da clínica: contas a pagar, compras, preventiva de equipamentos e fechamento de caixa). A IA só sugere; responsável: Recepção (compras: Dr. Lucas decide). Ainda sem aprovação.",
 ]
 PENDENTE = [
@@ -25,7 +26,8 @@ PENDENTE = [
     "Lista de palavras de urgência clínica e de procedimentos fora do escopo: revisão clínica.",
     "FN-01: confirmar valores assumidos (lembrete 3 dias antes; 1 cobrança a cada 7 dias por paciente; 10 sugestões por dia) e revisar o texto de cobrança.",
     "FN-02: confirmar valores assumidos (conta avisada 2 dias antes; preventiva 15 dias antes; caixa olha os últimos 7 dias) e se as compras pendentes vão mesmo para o Dr. Lucas.",
-    "Financeiro ainda por desenhar: pendências com convênio e fechamento de caixa de convênio (falta o RT explicar o que é pendência), chamados de equipamento parados e diferença de caixa sem explicação.",
+    "FN-03: confirmar valores assumidos (criar guia 3 dias após aprovar; enviar guia 3 dias após criar; cobrar autorização 7 dias após enviar; fechamento do mês a partir do dia 5) e o que significa “fechamento de caixa de convênio” para a clínica.",
+    "Ainda por desenhar: chamados de equipamento parados e diferença de caixa sem explicação (campos do Clinus a conferir).",
     "Lista de profissionais parceiros (a ser entregue pelo Dr. Lucas).",
 ]
 

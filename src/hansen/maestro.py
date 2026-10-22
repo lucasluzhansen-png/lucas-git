@@ -125,7 +125,7 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica") else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa") else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
@@ -145,11 +145,18 @@ class Maestro:
             "fazer_pedido": "Compra aprovada: fazer o pedido",
             "agendar_preventiva": "Agendar manutenção preventiva de equipamento",
             "fechar_caixa": "Fechar o caixa do dia",
+            "criar_guia": "Convênio: criar a guia do tratamento aprovado",
+            "enviar_guia": "Convênio: guia criada e ainda não enviada",
+            "cobrar_autorizacao": "Convênio: autorização pendente",
+            "cobrar_repasse": "Convênio: repasse ATRASADO",
+            "recurso_glosa": "Convênio: glosa sem recurso",
+            "conferir_convenio": "Convênio: conferir repasses da operadora (fechamento do mês)",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
             titulo += f" [{ref}]"
         quem = self.pops["A-06"].responsaveis
         chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial", "revisar_manutencao": "contato_comercial", "cobrar_atraso": "financeiro", "lembrar_vencimento": "financeiro", "pagar_conta": "financeiro", "pagar_conta_vencida": "financeiro",
                  "decidir_compra": "decisao_compras", "decidir_compra_critica": "decisao_compras", "fazer_pedido": "financeiro",
-                 "agendar_preventiva": "financeiro", "fechar_caixa": "financeiro"}.get(acao, "aprovacao_ia")
+                 "agendar_preventiva": "financeiro", "fechar_caixa": "financeiro", "criar_guia": "financeiro", "enviar_guia": "financeiro",
+                 "cobrar_autorizacao": "financeiro", "cobrar_repasse": "financeiro", "recurso_glosa": "financeiro", "conferir_convenio": "financeiro"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

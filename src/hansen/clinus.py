@@ -37,6 +37,7 @@ class ClinusDados:
     compras: list[dict] = field(default_factory=list)
     equipamentos: list[dict] = field(default_factory=list)
     caixa: list[dict] = field(default_factory=list)
+    guias: list[dict] = field(default_factory=list)  # store clinus_guias (módulo "Faturamento de convênio")
     recebido_por_dia: dict[str, float] = field(default_factory=dict)  # "AAAA-MM-DD" → total recebido (para conferir o fechamento de caixa)
     stores_brutos: dict = field(default_factory=dict)  # só para diagnóstico de estrutura; nada daqui é usado como dado de paciente
 
@@ -115,6 +116,41 @@ def data_br(texto) -> date | None:
     return None
 
 
+def op_nome(s) -> str:
+    """Nome da operadora normalizado, como no Clinus (`_opNome`)."""
+    t = str(s or "").strip()
+    if not t:
+        return "Convênio sem nome"
+    if re.search(r"bradesco|odontoprev", t, re.I):
+        return "Bradesco/Odontoprev"
+    if re.search(r"codeba", t, re.I):
+        return "CODEBA"
+    if re.search(r"petrobras", t, re.I):
+        return "Petrobras"
+    return t[:1].upper() + t[1:]
+
+
+def guia_status(g: dict) -> str:
+    return "aprovada" if g.get("status") == "autorizada" else (g.get("status") or "criada")
+
+
+def guia_calc(g: dict) -> dict:
+    """Valores da guia, como no Clinus (`_guiaCalc`)."""
+    v = _valor(g.get("valor"))
+    gl = min(v, _valor(g.get("glosado")))
+    st = guia_status(g)
+    perdido = 0.0 if g.get("recurso") == "deferido" else gl
+    esperado = _valor(g.get("valorEsperado")) if _valor(g.get("valorEsperado")) > 0 else v - perdido
+    recebido = _valor(g.get("valorRecebido")) if _valor(g.get("valorRecebido")) > 0 else (esperado if st == "paga" else 0.0)
+    return {"valor": v, "glosado": gl, "perdido": perdido, "esperado": esperado, "recebido": recebido, "a_receber": max(0.0, esperado - recebido)}
+
+
+def guia_atrasada(g: dict, hoje: date) -> bool:
+    """Repasse atrasado, como no Clinus (`_guiaAtrasada`): não paga, não só criada, previsão vencida e sem repasse registado."""
+    prev = data_br(g.get("previsao"))
+    return guia_status(g) not in ("paga", "criada") and bool(prev) and prev < hoje and not g.get("repasse")
+
+
 def _historico(p: dict) -> bool:
     """Base importada sem nenhuma ação humana (mesma regra do Clinus, `_ehHistorico`): não é lead nem paciente a reativar."""
     if not p.get("origemImport"):
@@ -145,6 +181,11 @@ def carregar_backup(caminho: Path) -> ClinusDados:
             "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
             "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
+            "aprovado_em": str((p.get("orcamento") or {}).get("aprovadoEm") or ""),
+            "encerrado": bool((p.get("encerramento") or {}).get("emISO")),
+            "conv_valor": sum(_valor(it.get("valor")) * (float(it.get("qtd")) if str(it.get("qtd") or "").replace(".", "", 1).isdigit() else 1.0)
+                              for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)),
+            "conv_operadora": op_nome(next((it.get("convenio") for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)), None) or p.get("convQual")),
             "parcelas": [x for x in ((p.get("orcamento") or {}).get("parcelas") or []) if isinstance(x, dict)],
             "pago": _pago(p.get("orcamento") or {}),
             "etapa": p.get("etapa") if isinstance(p.get("etapa"), int) else None, "zona": p.get("zona") or "",
@@ -174,6 +215,7 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     d.compras = [c for c in lista("clinus_compras") if isinstance(c, dict) and isinstance(c.get("id"), str) and isinstance(c.get("produto"), str) and c["produto"]]
     eq = lista("clinus_equipamentos")
     d.equipamentos = [e for e in (eq.get("equipamentos") if isinstance(eq, dict) else []) or [] if isinstance(e, dict)]
+    d.guias = [g for g in lista("clinus_guias") if isinstance(g, dict) and g.get("id")]
     d.caixa = [c for c in lista("clinus_caixa") if isinstance(c, dict) and _ISO.match(str(c.get("data") or ""))]
     for p in bruto.get("pacientes") or []:  # recebimentos por dia (estornados e transferidos não contam), como o caixa do Clinus
         for pg in ((p.get("orcamento") or {}).get("pagamentos") or []):
@@ -261,13 +303,17 @@ def _resumo_financeiro(d: ClinusDados, agora: datetime) -> list[str]:
         n = sum(1 for x in situacao_parcelas(p["parcelas"], p["pago"], agora.date()) if x["atraso"] >= 3)
         atrasadas += n
         pacientes_atrasados += n > 0
-    return [f"Financeiro: pacientes com parcelamento: {len(com_parc)} | parcelas atrasadas (3+ dias): {atrasadas} em {pacientes_atrasados} paciente(s)"] + _estrutura_stores(d)
+    from collections import Counter
+    st = dict(Counter(guia_status(g) for g in d.guias))
+    atras = sum(1 for g in d.guias if guia_atrasada(g, agora.date()))
+    guias = f"Convênio (guias): {len(d.guias)} guia(s) | por status: {st} | repasse atrasado: {atras}"
+    return [guias, f"Financeiro: pacientes com parcelamento: {len(com_parc)} | parcelas atrasadas (3+ dias): {atrasadas} em {pacientes_atrasados} paciente(s)"] + _estrutura_stores(d)
 
 
 def _estrutura_stores(d: ClinusDados) -> list[str]:
     linhas = []
     for chave, rotulo in (("clinus_caixa", "caixa"), ("clinus_contas_pagar", "contas a pagar"), ("clinus_compras", "compras"),
-                          ("clinus_equipamentos", "equipamentos"), ("clinus_convenios", "convênios")):
+                          ("clinus_equipamentos", "equipamentos"), ("clinus_convenios", "tabelas de convênio")):
         bruto = d.stores_brutos.get(chave)
         if bruto is None:
             linhas.append(f"  [{rotulo}] não existe no backup")

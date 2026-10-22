@@ -8,7 +8,7 @@ from pathlib import Path
 
 from datetime import timedelta
 
-from hansen.clinus import ClinusDados, carregar_backup, data_br, situacao_parcelas
+from hansen.clinus import ClinusDados, carregar_backup, data_br, guia_atrasada, guia_calc, guia_status, op_nome, situacao_parcelas
 from hansen.maestro import Maestro
 
 
@@ -151,13 +151,80 @@ def rodar_clinica(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[Item
         if clinus.recebido_por_dia.get(dia.isoformat(), 0) > 0 and dia.isoformat() not in fechados:
             sugerir(f"caixa|{dia}", "caixa_aberto", "caixa", f"{dia:%d/%m}", f"Caixa de {dia:%d/%m} sem fechamento registado", f"caixa {dia}")
 
+    itens += _convenio(m, clinus, agora, feitos, sugerir)
     if arq:
         arq.write_text(json.dumps(sorted(feitos)), encoding="utf-8")
     return itens
 
 
+def _param_fn03(m: Maestro, chave: str) -> int:
+    return next(r.parametros[chave] for r in m.pops["FN-03"].regras_de_decisao if chave in r.parametros)
+
+
+def _convenio(m: Maestro, clinus: ClinusDados, agora: datetime, feitos: set, sugerir) -> list[ItemF]:
+    """FN-03: guias, autorizações, repasses e glosas do módulo de faturamento de convênio do Clinus. Retorna [] (as sugestões entram via `sugerir`)."""
+    hoje = agora.date()
+    pacs = clinus.por_id
+
+    def dias_desde(texto):
+        d = data_br(texto)
+        return (hoje - d).days if d else None
+
+    def rot(g):
+        p = pacs.get(g.get("pacId"), {})
+        return f"{op_nome(g.get('convenio') or p.get('conv_operadora'))} · guia {g.get('numero') or g['id']} ({_brl(guia_calc(g)['valor'])})"
+
+    # tratamento de convênio aprovado, sem nenhuma guia (mesma regra do Clinus, `_convenioSemGuia`)
+    com_guia = {g.get("pacId") for g in clinus.guias}
+    for p in sorted(pacs.values(), key=lambda p: str(p["id"])):
+        d = dias_desde(p["aprovado_em"])
+        if p["ativo"] and p["aprovado_em"] and not p["encerrado"] and p["conv_valor"] > 0 and p["id"] not in com_guia \
+                and d is not None and d >= _param_fn03(m, "dias_sem_guia"):
+            sugerir(f"semguia|{p['id']}", "convenio", "convenio", f"{p['conv_operadora']} · {p['nome']}",
+                    f"{p['conv_operadora']}: tratamento aprovado há {d} dias ({_brl(p['conv_valor'])}) sem guia criada",
+                    f"paciente {p['id']}", acao="criar_guia")
+
+    for g in clinus.guias:
+        st = guia_status(g)
+        c = guia_calc(g)
+        nome = rot(g)
+        if st == "criada":
+            d = dias_desde(str(g.get("criadoEm") or "")[:10])
+            if d is not None and d >= _param_fn03(m, "dias_guia_criada"):
+                sugerir(f"guia|{g['id']}|criada", "convenio", "convenio", nome, f"{nome}: criada há {d} dias e não enviada", f"guia {g['id']}", acao="enviar_guia")
+        elif st == "enviada":
+            d = dias_desde(g.get("envio"))
+            if d is not None and d >= _param_fn03(m, "dias_autorizacao"):
+                sugerir(f"guia|{g['id']}|enviada", "convenio", "convenio", nome, f"{nome}: enviada há {d} dias sem aprovação do convênio", f"guia {g['id']}", acao="cobrar_autorizacao")
+        elif st == "glosada" and not g.get("recurso"):
+            sugerir(f"guia|{g['id']}|glosa", "convenio", "convenio", nome,
+                    f"{nome}: glosa de {_brl(c['glosado'])} sem recurso registado" + (f" ({g['motivoGlosa']})" if g.get("motivoGlosa") else ""),
+                    f"guia {g['id']}", acao="recurso_glosa")
+        if guia_atrasada(g, hoje):
+            prev = data_br(g.get("previsao"))
+            sugerir(f"guia|{g['id']}|repasse", "convenio", "convenio", nome,
+                    f"{nome}: repasse previsto para {prev:%d/%m} ({(hoje - prev).days} dias de atraso), {_brl(c['a_receber'] or c['esperado'])} a receber",
+                    f"guia {g['id']}", acao="cobrar_repasse")
+
+    # fechamento do mês: operadoras com guias de meses anteriores ainda a receber
+    if hoje.day >= _param_fn03(m, "dia_fechamento"):
+        inicio_mes = hoje.replace(day=1)
+        por_op: dict[str, list[float]] = {}
+        for g in clinus.guias:
+            st, c = guia_status(g), guia_calc(g)
+            ref = data_br(g.get("envio")) or data_br(str(g.get("criadoEm") or "")[:10])
+            conta = st != "paga" and st != "criada" and (st != "glosada" or g.get("recurso") in ("deferido", "enviado")) and c["a_receber"] > 0
+            if conta and ref and ref < inicio_mes:
+                por_op.setdefault(op_nome(g.get("convenio") or pacs.get(g.get("pacId"), {}).get("conv_operadora")), []).append(c["a_receber"])
+        for op, valores in sorted(por_op.items()):
+            sugerir(f"fechconv|{op}|{hoje:%Y-%m}", "convenio", "convenio", op,
+                    f"{op}: {len(valores)} guia(s) de meses anteriores ainda a receber, total {_brl(sum(valores))}",
+                    f"convênio {op} {hoje:%Y-%m}", acao="conferir_convenio")
+    return []
+
+
 def formatar_clinica(itens: list[ItemF]) -> str:
-    rot = {"conta": "Conta a pagar", "compra": "Compra", "equipamento": "Equipamento", "caixa": "Caixa"}
+    rot = {"conta": "Conta a pagar", "compra": "Compra", "equipamento": "Equipamento", "caixa": "Caixa", "convenio": "Convênio"}
     return "\n".join([f"{'Tipo':<15} O que aconteceu"] + [f"{rot[i.tipo]:<15} {i.resultado}" for i in itens]) if itens else "Nada pendente na rotina da clínica hoje."
 
 

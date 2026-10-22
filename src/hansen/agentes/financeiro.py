@@ -4,7 +4,7 @@ from hansen.agentes.base import Proposta
 
 class Financeiro:
     nome = "financeiro"
-    tipos = {"parcela_atrasada", "parcela_a_vencer", "conta_pagar", "compra", "equipamento", "caixa_aberto"}
+    tipos = {"parcela_atrasada", "parcela_a_vencer", "conta_pagar", "compra", "equipamento", "caixa_aberto", "convenio"}
 
     def tratar(self, tipo: str, texto: str = "", dados: dict | None = None) -> Proposta | None:
         d = dados or {}
@@ -19,6 +19,8 @@ class Financeiro:
             return Proposta("FN-02", d.get("acao", "decidir_compra"), d.get("detalhe", ""))
         if tipo == "equipamento":
             return Proposta("FN-02", "agendar_preventiva", d.get("detalhe", ""))
+        if tipo == "convenio":
+            return Proposta("FN-03", d.get("acao", "cobrar_autorizacao"), d.get("detalhe", ""))
         if tipo == "caixa_aberto":
             return Proposta("FN-02", "fechar_caixa", d.get("detalhe", ""))
         return None
