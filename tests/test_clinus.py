@@ -75,3 +75,16 @@ def test_diagnostico_roda_pela_linha_de_comando(tmp_path):
     r = subprocess.run([sys.executable, "-m", "hansen.clinus", str(_backup(tmp_path))], capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stderr
     assert "Pacientes ativos" in r.stdout and "Maria" not in r.stdout
+
+
+def test_backup_mal_formado_nao_derruba(tmp_path):
+    import json
+    import pytest
+    from hansen.clinus import carregar_backup
+    f = tmp_path / "b.json"
+    f.write_text(json.dumps({"versao": "hrpg_v1", "stores": [1], "pacientes": [
+        {"id": "a", "orcamento": "texto"}, "lixo", {"id": "b", "orcamento": {"pagamentos": [None, "x"], "parcelas": [None]}, "encerramento": "x"}]}), encoding="utf-8")
+    assert set(carregar_backup(f).por_id) == {"a", "b"}
+    f.write_text("[]", encoding="utf-8")
+    with pytest.raises(ValueError):
+        carregar_backup(f)

@@ -35,3 +35,8 @@ regras_de_decisao:
   - condicao: "OS marcada com problema no Clinus"
     acao: "Avisar a Recepção e o dentista; resolver com o laboratório."
     efeito: "alertar_humano"
+  - condicao: "Consulta de prova ou instalação de prótese e a peça não foi conferida contra a OS (check da ASB no Clinus)"
+    acao: "Suspender a confirmação automática ao paciente e avisar a Recepção para confirmar a peça com o laboratório antes."
+    efeito: "alertar_humano"
+    # A confirmação só é liberada quando a OS do paciente tem a conferência anti-refação registrada (campo antiRefacaoEm do Clinus).
+    palavras_chave: ["prova", "instalacao", "instalar", "protese"]
