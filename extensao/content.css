@@ -1,0 +1,11 @@
+#maestro-hansen{position:fixed;right:18px;bottom:18px;z-index:2147483647;font:14px/1.35 system-ui,sans-serif;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#maestro-hansen .mh-mascote{position:relative;width:64px;height:64px;cursor:grab;background:#fff;border:2px solid #0E5E63;border-radius:50%;display:grid;place-items:center;box-shadow:0 2px 8px #0004;touch-action:none}
+#maestro-hansen.mh-erro .mh-mascote{opacity:.55;filter:grayscale(1)}
+#maestro-hansen .mh-ponto{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;border-radius:10px;background:#c0392b;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+#maestro-hansen .mh-ponto[hidden],#maestro-hansen .mh-balao[hidden]{display:none}
+#maestro-hansen .mh-balao{max-width:300px;background:#fff;color:#1d2b2c;border:2px solid #0E5E63;border-radius:12px;padding:10px 12px;box-shadow:0 4px 14px #0004}
+#maestro-hansen .mh-botoes{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+#maestro-hansen button{font:inherit;border:0;border-radius:8px;padding:5px 10px;background:#0E5E63;color:#fff;cursor:pointer}
+#maestro-hansen button:disabled{opacity:.5}
+#maestro-hansen .mh-item{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:3px 0}
+#maestro-hansen .mh-urg span{color:#c0392b;font-weight:600}

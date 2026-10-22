@@ -71,7 +71,7 @@ class Servico:
         self.atualizar(forcar=True)
         return self.erro
 
-    def estado(self, perfil: str) -> dict:
+    def estado(self, perfil: str, canal: str = "web") -> dict:
         with self.lock:
             if self.m is None:
                 self.atualizar()
@@ -94,7 +94,7 @@ class Servico:
                         "urgente": t.prioridade in ("amarela", "vermelha"), "dias": dias(t), "categoria": categoria(t.titulo)}
 
             idade = (agora - datetime.fromtimestamp(self.backup.stat().st_mtime)).total_seconds() / 3600
-            arq = self.base / "estado" / f"cobrador_web_{perfil}.json"
+            arq = self.base / "estado" / f"cobrador_{canal}_{perfil}.json"
             est = json.loads(arq.read_text(encoding="utf-8")) if arq.exists() else {}
             avisos = decidir(self.pops["MA-01"], tarefas, perfil, agora, est, idade)
             arq.write_text(json.dumps(est), encoding="utf-8")
@@ -162,7 +162,8 @@ def criar_servidor(servico: Servico, token: str, porta: int = PORTA) -> Threadin
                 return self._responder(PAGINA.read_bytes(), "text/html; charset=utf-8")
             if url.path == "/api/estado":
                 perfil = (qs.get("perfil") or ["lucas"])[0]
-                return self._json(servico.estado(perfil if perfil in ("lucas", "recepcao") else "lucas"))
+                canal = "ext" if (qs.get("canal") or [""])[0] == "ext" else "web"  # extensão do navegador cobra no seu próprio ritmo
+                return self._json(servico.estado(perfil if perfil in ("lucas", "recepcao") else "lucas", canal))
             self._responder(b"nao encontrado", "text/plain", 404)
 
         def do_POST(self):

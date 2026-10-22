@@ -108,3 +108,9 @@ def test_backup_quebrado_nao_derruba(tmp_path):
 
 def test_token_persiste(tmp_path):
     assert ler_ou_criar_token(tmp_path) == ler_ou_criar_token(tmp_path)
+
+
+def test_canal_da_extensao_tem_estado_proprio(tmp_path):
+    from hansen.app import Servico  # noqa: F401  (o arquivo do cobrador é separado por canal)
+    import inspect
+    assert "canal" in inspect.signature(Servico.estado).parameters
