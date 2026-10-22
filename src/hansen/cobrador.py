@@ -10,6 +10,8 @@ from hansen.yaml_parser import POP
 CATEGORIAS = (
     ("Conta a pagar VENCIDA", "conta vencida"), ("Conta a pagar a vencer", "conta a vencer"), ("Compra CRÍTICA", "compra crítica"),
     ("Compra", "compra"), ("Fechar o caixa", "caixa sem fechar"), ("Agendar manutenção", "preventiva de equipamento"),
+    ("Laboratório: OS atrasada", "OS de laboratório atrasada"), ("Laboratório: OS com problema", "OS com problema"),
+    ("Laboratório: peça retornou", "peça a conferir"), ("Laboratório", "pendência de laboratório"),
     ("Convênio: repasse", "repasse de convênio atrasado"), ("Convênio: glosa", "glosa sem recurso"), ("Convênio", "pendência de convênio"),
     ("Cobrar parcela", "cobrança de parcela"), ("Lembrar parcela", "parcela a vencer"), ("Retomar contato", "orçamento a retomar"),
     ("Reativar paciente", "paciente a reativar"), ("Contatar para revisão", "revisão/manutenção"), ("Parabenizar", "aniversariante"),

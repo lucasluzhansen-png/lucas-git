@@ -37,12 +37,12 @@ AVISO_FINANCEIRO = ("Sugestões da IA para a Recepção. <b>Revise o texto antes
 # tarefas internas da clínica (sem paciente): aparecem como cartões simples, sem botão de WhatsApp
 INTERNOS = {
     "Conta a pagar": "Conta a pagar", "Compra": "Compra", "Agendar manutenção preventiva": "Equipamento",
-    "Fechar o caixa": "Caixa", "Convênio": "Convênio",
+    "Fechar o caixa": "Caixa", "Convênio": "Convênio", "Laboratório": "Laboratório",
 }
 
 
 def cartoes_internos(m: Maestro) -> list[dict]:
-    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras")}
+    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras", "laboratorio")}
     saida = []
     for t in m.tarefas.tarefas.values():
         rotulo = next((r for k, r in INTERNOS.items() if t.titulo.startswith(k)), None)

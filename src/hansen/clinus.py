@@ -37,6 +37,7 @@ class ClinusDados:
     compras: list[dict] = field(default_factory=list)
     equipamentos: list[dict] = field(default_factory=list)
     caixa: list[dict] = field(default_factory=list)
+    lab_os: list[dict] = field(default_factory=list)  # store lab_os (ordens de serviço do laboratório)
     guias: list[dict] = field(default_factory=list)  # store clinus_guias (módulo "Faturamento de convênio")
     recebido_por_dia: dict[str, float] = field(default_factory=dict)  # "AAAA-MM-DD" → total recebido (para conferir o fechamento de caixa)
     stores_brutos: dict = field(default_factory=dict)  # só para diagnóstico de estrutura; nada daqui é usado como dado de paciente
@@ -215,6 +216,7 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     d.compras = [c for c in lista("clinus_compras") if isinstance(c, dict) and isinstance(c.get("id"), str) and isinstance(c.get("produto"), str) and c["produto"]]
     eq = lista("clinus_equipamentos")
     d.equipamentos = [e for e in (eq.get("equipamentos") if isinstance(eq, dict) else []) or [] if isinstance(e, dict)]
+    d.lab_os = [o for o in lista("lab_os") if isinstance(o, dict) and (o.get("numero") or o.get("id")) and not o.get("arquivada")]
     d.guias = [g for g in lista("clinus_guias") if isinstance(g, dict) and g.get("id")]
     d.caixa = [c for c in lista("clinus_caixa") if isinstance(c, dict) and _ISO.match(str(c.get("data") or ""))]
     for p in bruto.get("pacientes") or []:  # recebimentos por dia (estornados e transferidos não contam), como o caixa do Clinus
@@ -306,8 +308,10 @@ def _resumo_financeiro(d: ClinusDados, agora: datetime) -> list[str]:
     from collections import Counter
     st = dict(Counter(guia_status(g) for g in d.guias))
     atras = sum(1 for g in d.guias if guia_atrasada(g, agora.date()))
+    ativas_lab = [o for o in d.lab_os if (o.get("etapa") or o.get("status")) not in ("instalado", "entregue", "cancelada", "cancelado")]
+    lab = f"Laboratório (OS): {len(d.lab_os)} OS | em andamento: {len(ativas_lab)} | por etapa: {dict(Counter((o.get('etapa') or o.get('status') or '(vazio)') for o in ativas_lab))}"
     guias = f"Convênio (guias): {len(d.guias)} guia(s) | por status: {st} | repasse atrasado: {atras}"
-    return [guias, f"Financeiro: pacientes com parcelamento: {len(com_parc)} | parcelas atrasadas (3+ dias): {atrasadas} em {pacientes_atrasados} paciente(s)"] + _estrutura_stores(d)
+    return [lab, guias, f"Financeiro: pacientes com parcelamento: {len(com_parc)} | parcelas atrasadas (3+ dias): {atrasadas} em {pacientes_atrasados} paciente(s)"] + _estrutura_stores(d)
 
 
 def _estrutura_stores(d: ClinusDados) -> list[str]:

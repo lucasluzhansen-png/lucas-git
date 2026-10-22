@@ -26,7 +26,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (126 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (133 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -78,6 +78,12 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - FEITO também: FN-02 (`rodar_clinica` em `rotina_financeira.py`): contas a pagar (store `clinus_contas_pagar`: id, descricao, valor, vencimento, status pago|pendente), compras (`clinus_compras`: produto, qtd, urgencia, status pendente|adiado|aprovado|pedido|recebido; pendente/crítico vai para o Dr. Lucas, aprovado para a Recepção), preventiva de equipamentos (`clinus_equipamentos.equipamentos[].proximaEm`) e fechamento de caixa (dia com recebimentos em `orcamento.pagamentos` sem registo em `clinus_caixa`). Uma sugestão por estado (não repete). Assumidos: conta 2 dias antes, preventiva 15 dias antes, caixa 7 dias. Estruturas confirmadas lendo o código do Clinus; backup real tinha 1 conta a pagar, 0 compras, 0 equipamentos, sem caixa.
 - FEITO: FN-03 (convênio), lendo o módulo "Faturamento de convênio" do Clinus ATUALIZADO (store `clinus_guias`: status criada|enviada|aprovada|executada|faturada|paga|glosada, envio, previsao, repasse, glosado, motivoGlosa, recurso, valorEsperado/Recebido). Mesma lógica de repasse atrasado do Clinus. Sugere: guia não criada (orçamento de convênio aprovado sem guia), guia criada e não enviada, autorização pendente, repasse atrasado, glosa sem recurso, fechamento mensal por operadora. Assumidos: 3/3/7 dias e dia 5. ATENÇÃO: o `index.html` deste repositório NÃO é o Clinus (é outro app); o Clinus real está fora do repositório e NÃO foi alterado. Conferido: as regras que o sistema lê (parcelas, orçamento, contas a pagar, compras, equipamentos, caixa, histórico) são idênticas no Clinus atualizado.
 - FALTA: chamados de equipamento parados (campos de `ocorrencias` desconhecidos), diferença de caixa sem explicação (campos do fechamento desconhecidos).
+
+## Agente Laboratório (LB-01, criado em 22/10/2026)
+- Lê `lab_os` do Clinus (campos: numero, lab, pac, etapa moldagem|enviado|producao|retornou|prova|ajuste|instalado|entregue|cancelada|problema, entrega/prazo, marcos {enviado, retornou, instalado}, problema, arquivada, antiRefacaoEm). `python -m hansen.rotina_laboratorio "<backup.json>" agora`; também roda dentro do painel do dia e do Maestro.
+- Sugere (Recepção, só sugere): OS atrasada (cobrar o lab), prazo vencendo (2 dias), acima do prazo padrão (21 dias, do documento original), enviada sem prazo, peça retornou sem conferência anti-refação (1 dia), OS com problema. Tarefas fecham sozinhas quando a OS avança.
+- A IA NUNCA avalia a peça (cor, adaptação, qualidade): só prazo e etapa. Um teste garante que nenhum texto fala disso.
+- FALTA: cruzar com a agenda ("prova da barra + dentes na mesma sessão após o protocolo"; "peça retornou e não há prova agendada"); testar com backup real (o backup de 21/10 não tinha OS); confirmar o responsável (assumi Recepção).
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).

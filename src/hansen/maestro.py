@@ -6,6 +6,7 @@ from pathlib import Path
 
 from hansen.agentes.comercial import Comercial
 from hansen.agentes.financeiro import Financeiro
+from hansen.agentes.laboratorio import Laboratorio
 from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
 from hansen.canal import Notificador
@@ -37,7 +38,7 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro()]
+        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro(), Laboratorio()]
         self.notificador = notificador
         self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
@@ -126,7 +127,7 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa") else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa", "cobrar_lab", "sla_lab", "conferir_peca", "os_problema") else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
@@ -152,6 +153,12 @@ class Maestro:
             "cobrar_repasse": "Convênio: repasse ATRASADO",
             "recurso_glosa": "Convênio: glosa sem recurso",
             "conferir_convenio": "Convênio: conferir repasses da operadora (fechamento do mês)",
+            "cobrar_lab": "Laboratório: OS atrasada (cobrar o laboratório)",
+            "confirmar_prazo_lab": "Laboratório: prazo vencendo (confirmar com o laboratório)",
+            "sla_lab": "Laboratório: OS acima do prazo padrão",
+            "registrar_prazo_lab": "Laboratório: OS enviada sem prazo registado",
+            "conferir_peca": "Laboratório: peça retornou, falta a conferência",
+            "os_problema": "Laboratório: OS com problema",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
             titulo += f" [{ref}]"
@@ -159,5 +166,7 @@ class Maestro:
         chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial", "revisar_manutencao": "contato_comercial", "cobrar_atraso": "financeiro", "lembrar_vencimento": "financeiro", "pagar_conta": "financeiro", "pagar_conta_vencida": "financeiro",
                  "decidir_compra": "decisao_compras", "decidir_compra_critica": "decisao_compras", "fazer_pedido": "financeiro",
                  "agendar_preventiva": "financeiro", "fechar_caixa": "financeiro", "criar_guia": "financeiro", "enviar_guia": "financeiro",
-                 "cobrar_autorizacao": "financeiro", "cobrar_repasse": "financeiro", "recurso_glosa": "financeiro", "conferir_convenio": "financeiro"}.get(acao, "aprovacao_ia")
+                 "cobrar_autorizacao": "financeiro", "cobrar_repasse": "financeiro", "recurso_glosa": "financeiro", "conferir_convenio": "financeiro",
+                 "cobrar_lab": "laboratorio", "confirmar_prazo_lab": "laboratorio", "sla_lab": "laboratorio", "registrar_prazo_lab": "laboratorio",
+                 "conferir_peca": "laboratorio", "os_problema": "laboratorio"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

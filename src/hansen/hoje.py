@@ -135,7 +135,7 @@ h1{{font-size:1.35rem;margin:0}} h2{{font-size:1.05rem;margin:26px 0 8px;padding
 
 
 def executar(backup: Path, agora: datetime, base: Path) -> Path:
-    from hansen import lembretes, rotina_comercial, rotina_financeira
+    from hansen import lembretes, rotina_comercial, rotina_financeira, rotina_laboratorio
     pops = carregar_todos()
     base.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base / "ledger")
@@ -146,6 +146,7 @@ def executar(backup: Path, agora: datetime, base: Path) -> Path:
     rotina_comercial.rodar(m, dados, agora)
     rotina_financeira.rodar(m, dados, agora)
     rotina_financeira.rodar_clinica(m, dados, agora)
+    rotina_laboratorio.rodar(m, dados, agora)
     msgs = _mensagens_do_dia(base, agora.date().isoformat(), canal.enviadas)
     html = renderizar(m, dados, backup, agora, msgs, analisar(dados))
     destino = base / "painel_do_dia.html"
