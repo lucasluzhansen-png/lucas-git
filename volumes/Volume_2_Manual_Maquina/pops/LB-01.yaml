@@ -1,0 +1,37 @@
+id: "LB-01"
+versao: "1.0"
+manual: "Laboratorio"
+titulo: "Laboratório: prazos das OS, conferência na chegada e problemas"
+# A IA só acompanha PRAZOS e ETAPAS e cobra a equipe. Ela NUNCA avalia a peça (cor, adaptação, qualidade): isso é do dentista.
+# Responsável: Recepção (confirmado pelo RT em 22/10/2026). Valores de aviso (2 dias antes do prazo; conferência 1 dia após a chegada) aprovados pelo RT em 22/10/2026.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "OS enviada ou em produção com prazo de entrega vencido"
+    acao: "Avisar a Recepção para cobrar o laboratório."
+    efeito: "alertar_humano"
+  - condicao: "OS enviada ou em produção com prazo vencendo"
+    acao: "Avisar a Recepção para confirmar o prazo com o laboratório."
+    efeito: "alertar_humano"
+    # Aprovado pelo RT: avisar 2 dias antes do prazo.
+    parametros: { dias_aviso_prazo: 2 }
+  - condicao: "OS enviada ou em produção há mais dias que o prazo padrão do laboratório"
+    acao: "Avisar a Recepção que a OS passou do prazo padrão (15 a 21 dias)."
+    efeito: "alertar_humano"
+    # Do documento original do projeto: SLA padrão do laboratório de 15 a 21 dias.
+    parametros: { sla_dias: 21 }
+  - condicao: "OS enviada ou em produção sem prazo de entrega registado"
+    acao: "Avisar a Recepção para registar o prazo combinado com o laboratório."
+    efeito: "alertar_humano"
+  - condicao: "Peça retornou do laboratório e a conferência (anti-refação) ainda não foi registada"
+    acao: "Avisar o responsável para conferir a peça com o checklist da OS. A conferência é humana: a IA não avalia a peça."
+    efeito: "alertar_humano"
+    # Aprovado pelo RT: avisar 1 dia depois da chegada.
+    parametros: { dias_conferencia: 1 }
+  - condicao: "Peça retornou do laboratório e o paciente não tem consulta futura marcada"
+    acao: "Avisar a Recepção para agendar a prova ou a instalação (cruza a OS com a agenda do Clinus pelo paciente)."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 1 dia depois da chegada.
+    parametros: { dias_sem_agenda: 1 }
+  - condicao: "OS marcada com problema no Clinus"
+    acao: "Avisar a Recepção e o dentista; resolver com o laboratório."
+    efeito: "alertar_humano"

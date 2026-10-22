@@ -1,0 +1,112 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maestro Hansen</title>
+<style>
+:root{--bg:#f4f6f7;--tx:#1f2a30;--card:#fff;--bd:#dde3e6;--ac:#0e5e63;--u:#e65100;--ok:#2e7d32;--mut:#6b7a84}
+@media(prefers-color-scheme:dark){:root{--bg:#171a1c;--tx:#eceff1;--card:#23282b;--bd:#3a4246;--mut:#9aa8b0}}
+*{box-sizing:border-box} body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);margin:0;font-size:16px}
+.w{max-width:860px;margin:0 auto;padding:14px 16px 60px}
+.topo{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+.mas{flex-shrink:0;background:var(--card);border:1px solid var(--bd);border-radius:50%;padding:4px}
+h1{font-size:1.25rem;margin:0} .oi{font-size:1.02rem;margin-top:2px}
+.perfis{display:flex;gap:8px;margin:12px 0}
+.perfis button{flex:1;padding:12px;border:2px solid var(--bd);background:var(--card);color:inherit;border-radius:12px;font-size:1rem;cursor:pointer}
+.perfis button.on{border-color:var(--ac);background:var(--ac);color:#fff;font-weight:600}
+.k{display:flex;gap:10px;margin:10px 0}
+.k div{flex:1;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.k b{display:block;font-size:1.7rem}.k span{font-size:.8rem;color:var(--mut)}
+.faixa{border-radius:10px;padding:10px 12px;margin:10px 0;font-size:.92rem;background:#fff3e0;color:#5d3a00;border-left:5px solid var(--u)}
+.faixa.v{background:var(--card);color:var(--tx);border-left-color:var(--ac)}
+h2{font-size:1.05rem;margin:24px 0 8px;color:var(--ac)}
+.c{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin:10px 0}
+.c.u{border-left:6px solid var(--u)}
+.t{font-size:.74rem;text-transform:uppercase;color:var(--mut);letter-spacing:.03em}
+.n{font-weight:600;margin:3px 0 4px}.d{font-size:.92rem;color:var(--mut)}
+.m{font-size:.92rem;background:rgba(127,127,127,.13);border-radius:8px;padding:8px 10px;margin:8px 0}
+.bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+button.b,a.b{border:0;border-radius:10px;padding:10px 16px;font-size:.95rem;cursor:pointer;text-decoration:none;display:inline-block;color:#fff;background:var(--ac)}
+button.f{background:var(--ok)} button.g{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+.sem{color:#c62828;font-size:.9rem}
+.vazio{text-align:center;color:var(--mut);padding:26px 0}
+.rod{margin-top:26px;font-size:.82rem;color:var(--mut);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1f2933;color:#fff;padding:10px 16px;border-radius:10px;display:none;z-index:9}
+.drop{border:2px dashed var(--bd);border-radius:12px;padding:16px;text-align:center;margin:10px 0}
+</style>
+<div class="w">
+  <div class="topo">
+    <svg class="mas" viewBox="0 0 80 80" width="64" height="64" role="img" aria-label="Maestro"><path d="M26 10c-9 0-14 9-12 20 1 8 4 16 7 25 1 4 5 4 6 0l4-14c1-3 6-3 7 0l4 14c1 4 5 4 6 0 3-9 6-17 7-25 2-11-3-20-12-20-5 0-7 2-10 2s-5-2-10-2z" fill="#fff" stroke="#0E5E63" stroke-width="3" stroke-linejoin="round"/><circle cx="31" cy="26" r="2.4" fill="#0E5E63"/><circle cx="45" cy="26" r="2.4" fill="#0E5E63"/><path d="M32 34q6 6 12 0" fill="none" stroke="#0E5E63" stroke-width="2.6" stroke-linecap="round"/><path d="M58 30l16-18" stroke="#c28a2c" stroke-width="3.5" stroke-linecap="round"/><circle cx="75" cy="11" r="3" fill="#c28a2c"/></svg>
+    <div><h1>Maestro Hansen</h1><div class="oi" id="oi">Carregando…</div></div>
+  </div>
+  <div class="perfis"><button id="p-lucas" onclick="mudar('lucas')">👨‍⚕️ Dr. Lucas</button><button id="p-recepcao" onclick="mudar('recepcao')">🗂️ Recepção</button></div>
+  <div id="faixas"></div>
+  <div class="k" id="kpis"></div>
+  <div id="conteudo"></div>
+  <div class="rod"><span id="atu"></span><button class="b g" onclick="atualizar()">↻ Atualizar agora</button><button class="b g" id="bt-avisos" onclick="ativarAvisos()" style="display:none">🔔 Ativar avisos nesta tela</button><button class="b g" onclick="sair()">Encerrar Maestro</button></div>
+</div>
+<div id="toast"></div>
+<script>
+const K = new URLSearchParams(location.search).get('k') || '';
+let perfil = localStorage.getItem('perfil') || 'lucas', ultimo = null, naoLidos = 0;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function api(caminho, corpo) {
+  const url = caminho + (caminho.includes('?') ? '&' : '?') + 'k=' + encodeURIComponent(K);
+  const r = await fetch(url, corpo ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({perfil, ...corpo})} : {});
+  return r.json();
+}
+function toast(t) { const e = document.getElementById('toast'); e.textContent = t; e.style.display = 'block'; setTimeout(() => e.style.display = 'none', 2600); }
+function beep() { try { const c = new (window.AudioContext || window.webkitAudioContext)(), o = c.createOscillator(), g = c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value = 880; g.gain.value = 0.06; o.start(); setTimeout(() => { o.stop(); c.close(); }, 260); } catch (e) {} }
+function avisar(a) {
+  naoLidos++; document.title = '(' + naoLidos + ') Maestro Hansen'; beep();
+  if ('Notification' in window && Notification.permission === 'granted') new Notification(a.titulo, {body: a.texto});
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { naoLidos = 0; document.title = 'Maestro Hansen'; carregar(); } });
+function ativarAvisos() { Notification.requestPermission().then(() => { mostrarBotaoAvisos(); toast('Avisos ativados'); }); }
+function mostrarBotaoAvisos() { document.getElementById('bt-avisos').style.display = ('Notification' in window && Notification.permission === 'default') ? 'inline-block' : 'none'; }
+function mudar(p) { perfil = p; localStorage.setItem('perfil', p); carregar(); }
+async function feito(id) { const r = await api('/api/concluir', {id}); toast(r.ok ? 'Feito ✔ O Maestro anotou.' : 'Não consegui marcar.'); carregar(); }
+async function atualizar() { toast('Atualizando…'); const r = await api('/api/atualizar', {}); await carregar(); if (r.erro) toast(r.erro); }
+async function sair() { if (confirm('Encerrar o Maestro? Os avisos param até você abri-lo de novo.')) { await api('/api/sair', {}); document.body.innerHTML = '<div class="w"><p class="vazio">Maestro encerrado. Pode fechar esta aba.</p></div>'; } }
+function lerArquivo(f) {
+  if (!f) return; const rd = new FileReader();
+  rd.onload = async () => { const r = await api('/api/backup', {conteudo: rd.result}); toast(r.ok ? 'Backup carregado ✔' : r.erro); carregar(); };
+  rd.readAsText(f);
+}
+function cartaoPaciente(c) {
+  const link = c.link ? `<a class="b" href="${esc(c.link)}" target="_blank" rel="noopener">Abrir no WhatsApp</a>` : '<span class="sem">Sem telefone válido: ligue ou corrija o cadastro no Clinus.</span>';
+  return `<div class="c"><div class="t">${esc(c.rotulo)}${c.dias ? ' · ' + esc(c.dias) + ' dias' : ''}</div><div class="n">${esc(c.nome)}</div><div class="m">${esc(c.texto)}</div><div class="bt">${link}<button class="b f" onclick="feito(${c.tarefa})">✔ Feito</button></div></div>`;
+}
+function cartaoTarefa(t) {
+  const idade = t.dias >= 1 ? ` · aberta há ${t.dias} dia(s)` : '';
+  return `<div class="c ${t.urgente ? 'u' : ''}"><div class="t">${t.urgente ? 'URGENTE · ' : ''}${esc(t.categoria)}${idade}</div><div class="n">${esc(t.titulo)}</div><div class="d">${esc(t.detalhe)}</div><div class="bt"><button class="b f" onclick="feito(${t.id})">✔ Feito</button></div></div>`;
+}
+function cartaoMsg(x) {
+  const dig = String(x.destino).replace(/\D/g, '').slice(-11);
+  return `<div class="c"><div class="t">${esc(x.tipo)}</div><div class="m">${esc(x.texto)}</div><div class="bt"><a class="b" href="https://wa.me/55${dig}?text=${encodeURIComponent(x.texto)}" target="_blank" rel="noopener">Abrir no WhatsApp</a></div></div>`;
+}
+function render(e) {
+  document.getElementById('p-lucas').className = perfil === 'lucas' ? 'on' : '';
+  document.getElementById('p-recepcao').className = perfil === 'recepcao' ? 'on' : '';
+  const cont = document.getElementById('conteudo'), faixas = document.getElementById('faixas'), kpis = document.getElementById('kpis');
+  if (e.sem_backup) {
+    document.getElementById('oi').textContent = 'Preciso de um backup do Clinus para começar.';
+    faixas.innerHTML = ''; kpis.innerHTML = '';
+    cont.innerHTML = `<div class="faixa">${esc(e.erro || 'Nenhum backup encontrado.')}</div><div class="drop"><p><b>Arraste aqui o arquivo de backup</b> (ou escolha):</p><input type="file" accept=".json" onchange="lerArquivo(this.files[0])"><p class="d">No Clinus: Dados e backup → ⬇ Exportar JSON.</p></div>`;
+    return;
+  }
+  document.getElementById('oi').textContent = e.saudacao;
+  faixas.innerHTML = (e.backup.antigo ? `<div class="faixa">⚠ O backup do Clinus tem <b>${Math.floor(e.backup.horas)} h</b>. Exporte um novo no Clinus (Dados e backup) para eu enxergar o que mudou.</div>` : '') + (e.erro ? `<div class="faixa">${esc(e.erro)}</div>` : '');
+  kpis.innerHTML = `<div><b>${e.resumo.tarefas}</b><span>tarefas abertas</span></div><div><b style="color:${e.resumo.urgentes ? 'var(--u)' : 'inherit'}">${e.resumo.urgentes}</b><span>urgentes</span></div>${perfil === 'recepcao' ? `<div><b>${e.mensagens.length}</b><span>mensagens prontas</span></div>` : ''}`;
+  let h = '';
+  if (perfil === 'recepcao' && e.mensagens.length) h += '<h2>Mensagens prontas (você revisa e envia)</h2>' + e.mensagens.map(cartaoMsg).join('');
+  const total = e.cartoes.length + e.tarefas.length;
+  h += `<h2>${perfil === 'lucas' ? 'Para o Dr. Lucas' : 'Para a Recepção'}</h2>`;
+  h += total ? e.cartoes.map(cartaoPaciente).join('') + e.tarefas.map(cartaoTarefa).join('') : '<div class="vazio">Nada pendente. 🎉</div>';
+  cont.innerHTML = h;
+  document.getElementById('atu').innerHTML = `Atualizado às ${esc(e.agora)} · backup: ${esc(e.backup.nome)} · <label style="cursor:pointer;text-decoration:underline">trocar backup<input type="file" accept=".json" style="display:none" onchange="lerArquivo(this.files[0])"></label>`;
+}
+async function carregar() {
+  try { const e = await api('/api/estado?perfil=' + perfil); ultimo = e; render(e); (e.avisos || []).forEach(avisar); }
+  catch (err) { document.getElementById('oi').textContent = 'Sem conexão com o Maestro. Abra-o de novo pelo atalho.'; }
+}
+mostrarBotaoAvisos(); carregar(); setInterval(carregar, 60000);
+</script>
+</html>

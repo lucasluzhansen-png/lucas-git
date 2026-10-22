@@ -1,0 +1,18 @@
+id: "R-02"
+versao: "14.0"
+manual: "Recepcao"
+titulo: "Agendamento e Confirmação"
+automacao: { nivel: "IA_SOZINHA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Paciente não responde até 2h antes"
+    acao: "Marcar risco de no-show e acionar telefone humano."
+    efeito: "marcar_no_show"
+    parametros: { horas_antes: 2 }
+  # Janela confirmada pelo RT: seg-sex, 8h-18h.
+  - condicao: "Envio de WhatsApp fora de segunda a sexta ou fora do horário comercial"
+    acao: "Adiar envio para a próxima janela permitida."
+    efeito: "adiar_envio"
+    parametros: { hora_inicio: 8, hora_fim: 18 }
+mensagens:
+  lembrete_paciente: "Senhor(a) {nome}, lembramos da sua consulta em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."
+  alerta_rt: "ALERTA: {titulo}"

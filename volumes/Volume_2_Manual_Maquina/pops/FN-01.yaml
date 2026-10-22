@@ -1,0 +1,20 @@
+id: "FN-01"
+versao: "1.0"
+manual: "Financeiro"
+titulo: "Parcelas: lembrete de vencimento e cobrança de atraso"
+# Decisão do RT (22/10/2026): a IA só sugere; a Recepção revisa e envia. Nunca ameaça, expõe ou constrange o paciente.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Parcela em aberto vence nos próximos dias"
+    acao: "Sugerir lembrete cordial de vencimento; a Recepção revisa e envia."
+    efeito: "lembrar_vencimento"
+    # ASSUMIDO: 3 dias de antecedência. Confirmar com a clínica.
+    parametros: { dias_antes: 3 }
+  - condicao: "Parcela em aberto vencida há mais dias que o limite"
+    acao: "Sugerir contato cordial de cobrança, sem ameaça, sem constrangimento e sem juros ou multa no texto; a Recepção revisa e envia."
+    efeito: "cobrar_atraso"
+    # Confirmado pelo RT em 22/10/2026: 3 dias de atraso. ASSUMIDO: no máximo 1 cobrança a cada 7 dias por paciente e 10 sugestões por dia.
+    parametros: { dias_atraso: 3, intervalo_cobranca_dias: 7, maximo_por_dia: 10 }
+mensagens:
+  lembrar_vencimento: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Passando para lembrar que uma parcela do seu tratamento vence em {data_hora}. Qualquer dúvida, estamos à disposição."
+  cobrar_atraso: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Identificamos uma parcela do seu tratamento em aberto desde {data_hora}. Se já efetuou o pagamento, por favor desconsidere esta mensagem; caso contrário, podemos ajudar a regularizar da forma mais conveniente?"

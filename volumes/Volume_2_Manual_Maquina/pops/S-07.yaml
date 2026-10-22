@@ -1,0 +1,8 @@
+id: "S-07"
+versao: "14.0"
+manual: "Conformidade"
+titulo: "Contingência Operacional"
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Falta de energia ou água"
+    acao: "IA sugere cancelamentos massivos para aprovação da Receção e bloqueia check-ins."

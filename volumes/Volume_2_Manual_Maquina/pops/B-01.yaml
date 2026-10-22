@@ -1,0 +1,9 @@
+id: "B-01"
+versao: "14.0"
+manual: "Auxiliar"
+titulo: "Reprocessamento de Materiais"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Integrador químico não mudou de cor ou pacote saiu molhado"
+    acao: "Reprovar carga inteira. Interditar máquina."
+passos: [{numero: 5, tipo: "IA_Audita", descricao: "Exigir foto de integrador químico 5/6 antes de guardar."}]

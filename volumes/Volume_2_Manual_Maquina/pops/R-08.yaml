@@ -1,0 +1,6 @@
+id: "R-08"
+versao: "14.0"
+manual: "Recepcao"
+titulo: "Automação de Pré-Cadastro"
+automacao: { nivel: "IA_SOZINHA", aprovacao_humana: false }
+gatilho: { tipo: "Temporal", eventos: ["Marcação 1ª consulta", "Diariamente 10h (D-1)", "Diariamente 8h (D-0)"] }

@@ -1,0 +1,40 @@
+id: "MA-01"
+versao: "1.0"
+manual: "Maestro"
+titulo: "Cobrança do Maestro: resumo, insistência e escalada"
+# Decisão do RT (22/10/2026): o Maestro cobra por conta própria, em modo FIRME, por notificação do Windows, seg-sex 8h-18h,
+# o Dr. Lucas e a Recepção (cada um no seu computador). Cobrar a equipe é autônomo; decidir e enviar mensagens a pacientes continua humano.
+automacao: { nivel: "IA_EXECUTA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Fora da janela de cobrança"
+    acao: "Não cobrar: só de segunda a sexta, das 8h às 18h."
+    efeito: "alertar_humano"
+    parametros: { hora_inicio: 8, hora_fim: 18 }
+  - condicao: "Início do dia e fim do dia"
+    acao: "Resumo às 8h30 (se houver tarefas) e fechamento às 17h30."
+    efeito: "alertar_humano"
+    parametros: { resumo_h: 8, resumo_min: 30, fechamento_h: 17, fechamento_min: 30 }
+  - condicao: "Tarefa urgente (amarela ou vermelha) aberta"
+    acao: "Insistir a cada 2 horas até resolver; o tom endurece com os dias."
+    efeito: "alertar_humano"
+    parametros: { intervalo_urgente_h: 2 }
+  - condicao: "Tarefa da Recepção parada"
+    acao: "Avisar também o Dr. Lucas quando passar de 2 dias."
+    efeito: "alertar_humano"
+    parametros: { dias_escalar: 2 }
+  - condicao: "Backup do Clinus antigo"
+    acao: "Avisar que os dados estão velhos e pedir para exportar um novo (ASSUMIDO: 24 h; repetir a cada 4 h)."
+    efeito: "alertar_humano"
+    parametros: { backup_antigo_h: 24, intervalo_backup_h: 4 }
+  - condicao: "Atualização dos dados"
+    acao: "Reprocessar o backup quando houver arquivo novo ou a cada 60 min (ASSUMIDO)."
+    efeito: "alertar_humano"
+    parametros: { atualizar_min: 60 }
+mensagens:
+  resumo: "{saudacao}! {n} tarefa(s) para hoje, {u} urgente(s). Abra o painel do dia."
+  urgente_0: "URGENTE: {categorias}. Resolva hoje ou me diga o que está travando."
+  urgente_1: "ATRASADO há {dias} dia(s): {categorias}. Já passou do prazo."
+  urgente_2: "IGNORADO há {dias} dias: {categorias}. Isso não pode esperar mais."
+  fechamento: "Fim do dia: ficaram {n} tarefa(s) abertas ({u} urgentes). Amanhã cedo elas voltam."
+  escalada: "Recepção com {n} tarefa(s) parada(s) há {dias}+ dias: {categorias}."
+  backup_antigo: "O backup do Clinus tem {horas} h. Exporte um novo (Dados e backup) para eu enxergar o que mudou."

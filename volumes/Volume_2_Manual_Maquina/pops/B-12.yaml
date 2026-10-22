@@ -1,0 +1,6 @@
+id: "B-12"
+versao: "14.0"
+manual: "Auxiliar"
+titulo: "Acidente com Perfurocortante"
+automacao: { nivel: "HUMANO", aprovacao_humana: true }
+passos: [{numero: 3, tipo: "Humano", descricao: "Encaminhar IMEDIATAMENTE (até 2h) ao Instituto Couto Maia (ICOM)."}]

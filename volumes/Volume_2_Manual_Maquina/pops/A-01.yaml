@@ -1,0 +1,7 @@
+id: "A-01"
+versao: "14.0"
+manual: "Rotina"
+titulo: "Abertura da Clínica"
+# Decisão do RT: abertura só é registada (sem tarefa de aprovação). Antes: aprovacao_humana true.
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: false }
+passos: [{numero: 3, tipo: "IA_Audita", descricao: "Registar abertura e notificar agenda."}]

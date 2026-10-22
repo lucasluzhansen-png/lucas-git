@@ -1,0 +1,8 @@
+id: "C-00"
+versao: "14.0"
+manual: "Clinico"
+titulo: "Consentimento Informado"
+automacao: { nivel: "IA_AUDITA", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "TCLE assinado ausente do sistema"
+    acao: "Bloquear evolução do prontuário."

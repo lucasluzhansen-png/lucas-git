@@ -1,0 +1,27 @@
+id: "CM-02"
+versao: "1.0"
+manual: "Comercial"
+titulo: "Retomada de Orçamentos e Reativação de Pacientes"
+# Decisão do RT: a IA só sugere; um humano (Dr. Lucas) faz o contato. Nunca citar valores, descontos ou condições.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Orçamento em aberto ('vai pensar') há mais dias que o limite"
+    acao: "Sugerir retomada do contato pela equipe, sem citar valores ou descontos."
+    efeito: "retomar_orcamento"
+    # Confirmado pelo RT em 22/10/2026: 7 dias.
+    parametros: { dias_orcamento: 7 }
+  # Mesma definição do Clinus ("Manutenção / revisão vencida"): tratamento concluído (etapa 10) há 180 dias ou mais.
+  - condicao: "Tratamento concluído (etapa 10) sem contato há mais dias que o limite"
+    acao: "Sugerir contato para revisão/manutenção pela equipe, sem promoções."
+    efeito: "revisar_manutencao"
+    parametros: { dias_manutencao: 180 }
+  - condicao: "Paciente sem contato há mais dias que o limite e sem consulta futura"
+    acao: "Sugerir contato de relacionamento pela equipe, sem promoções."
+    efeito: "reativar_paciente"
+    # Confirmado pelo RT em 22/10/2026: parado após 90 dias; no máximo 1 contato comercial a cada 15 dias por paciente; até 5 sugestões por dia.
+    parametros: { dias_parado: 90, intervalo_contato_dias: 15, maximo_por_dia: 5 }
+# Textos sugeridos para o humano enviar (nunca com valores, descontos ou condições de pagamento).
+mensagens:
+  retomar_orcamento: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber se o(a) senhor(a) teve a oportunidade de analisar o plano que apresentamos e se podemos esclarecer alguma dúvida. Ficamos à disposição."
+  reativar_paciente: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber como o(a) senhor(a) tem passado. Se desejar agendar uma avaliação, estamos à disposição."
+  revisar_manutencao: "Senhor(a) {nome}, a Hansen Odontologia lembra que está na época de uma revisão do seu tratamento. Podemos agendar um horário conveniente?"

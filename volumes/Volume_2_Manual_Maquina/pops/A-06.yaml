@@ -1,0 +1,23 @@
+id: "A-06"
+versao: "14.0"
+manual: "Rotina"
+titulo: "Acompanhamento de Pendências"
+automacao: { nivel: "IA_EXECUTA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Pendência Crítica (Vermelha) atinge 60 min sem resolução"
+    acao: "Chamada telefónica para RT."
+    efeito: "escalar"
+    parametros: { minutos: 60 }
+  - condicao: "Fecho de pendência sem anexo de evidência"
+    acao: "Rejeitar fecho."
+    efeito: "rejeitar_fecho"
+responsaveis:
+  aprovacao_ia: "lucas"
+  alerta_rt: "lucas"
+  ligacao_no_show: "recepcao"
+  tratar_manual: "recepcao"
+  financeiro: "recepcao"  # decisão do RT
+  laboratorio: "recepcao"  # confirmado pelo RT em 22/10/2026
+  decisao_compras: "lucas"  # ASSUMIDO: o Clinus diz "aguardando o dono decidir"
+  contato_comercial: "lucas"  # decisão do RT
+  agendar_paciente: "recepcao"  # decisão do RT: recepção agenda sozinha
