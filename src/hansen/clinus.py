@@ -12,7 +12,7 @@ ABERTOS = {"agendado", "confirmado", ""}
 
 
 def _digitos(tel: str | None) -> str:
-    d = re.sub(r"\D", "", tel or "")
+    d = re.sub(r"\D", "", tel if isinstance(tel, str) else "")
     return d[-11:] if len(d) >= 10 else ""  # ignora +55; descarta números incompletos
 
 
@@ -172,6 +172,21 @@ def _orc_aberto(p: dict) -> bool:
     return p.get("decisao") == "pensar" or p.get("zona") == "orcpendente" or p.get("etapa") == 7 or (em_aberto and bool(p.get("orcamentosFechados")))
 
 
+def _txt(v) -> str:
+    return v if isinstance(v, str) else (str(v) if isinstance(v, int) and not isinstance(v, bool) else "")
+
+
+def _evento_limpo(e: dict) -> dict:
+    """Campos de texto da agenda sempre texto (valor estranho vira vazio), para as rotinas nunca quebrarem com um evento mal formado."""
+    r = dict(e)
+    for k in ("id", "pacId", "nome", "data", "hora", "status", "tipo", "dentista", "obs"):
+        if k in r:
+            r[k] = _txt(r[k])
+    if "dur" in r and not (isinstance(r["dur"], int) and not isinstance(r["dur"], bool)):
+        r["dur"] = 30
+    return r
+
+
 def carregar_backup(caminho: Path) -> ClinusDados:
     bruto = json.loads(Path(caminho).read_text(encoding="utf-8"))
     if not isinstance(bruto, dict) or bruto.get("versao") != "hrpg_v1":
@@ -186,17 +201,21 @@ def carregar_backup(caminho: Path) -> ClinusDados:
         orc = p.get("orcamento") if isinstance(p.get("orcamento"), dict) else {}
         if "pagamentos" in orc:
             orc = {**orc, "pagamentos": [x for x in orc["pagamentos"] if isinstance(x, dict)] if isinstance(orc["pagamentos"], list) else []}
+        if p.get("id") is not None and not isinstance(p.get("id"), (str, int)):
+            continue  # sem id utilizável: ignora, nunca adivinha
+        conv = orc.get("convItens") if isinstance(orc.get("convItens"), dict) else {}
+        parc = orc.get("parcelas") if isinstance(orc.get("parcelas"), list) else []
         p = {**p, "orcamento": orc, "encerramento": p.get("encerramento") if isinstance(p.get("encerramento"), dict) else {}}
         enxuto = {
-            "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
+            "id": p.get("id"), "nome": _txt(p.get("nome")), "tel": _txt(p.get("tel")),
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
             "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
             "aprovado_em": str((p.get("orcamento") or {}).get("aprovadoEm") or ""),
             "encerrado": bool((p.get("encerramento") or {}).get("emISO")), "encerrado_em": str((p.get("encerramento") or {}).get("emISO") or ""),
             "conv_valor": sum(_valor(it.get("valor")) * (float(it.get("qtd")) if str(it.get("qtd") or "").replace(".", "", 1).isdigit() else 1.0)
-                              for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)),
-            "conv_operadora": op_nome(next((it.get("convenio") for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)), None) or p.get("convQual")),
-            "parcelas": [x for x in ((p.get("orcamento") or {}).get("parcelas") or []) if isinstance(x, dict)],
+                              for it in conv.values() if isinstance(it, dict)),
+            "conv_operadora": op_nome(next((it.get("convenio") for it in conv.values() if isinstance(it, dict)), None) or p.get("convQual")),
+            "parcelas": [x for x in parc if isinstance(x, dict)],
             "pago": _pago(p.get("orcamento") or {}),
             "etapa": p.get("etapa") if isinstance(p.get("etapa"), int) else None, "zona": p.get("zona") or "",
             "orc_aberto": _orc_aberto(p), "historico": _historico(p),
@@ -209,16 +228,20 @@ def carregar_backup(caminho: Path) -> ClinusDados:
             d.por_telefone[_digitos(p["tel"])] = enxuto
     agenda = (bruto.get("stores") or {}).get("clinus_agenda_v2")
     if agenda:  # o backup guarda cada store como texto JSON
-        lista = json.loads(agenda) if isinstance(agenda, str) else agenda
-        d.agenda = [e for e in lista if isinstance(e, dict)]
+        try:
+            bruta = json.loads(agenda) if isinstance(agenda, str) else agenda
+        except ValueError:
+            bruta = []
+        d.agenda = [_evento_limpo(e) for e in (bruta if isinstance(bruta, list) else []) if isinstance(e, dict)]
     stores = bruto.get("stores") or {}
 
     def lista(chave):
         v = stores.get(chave)
         try:
-            return (json.loads(v) if isinstance(v, str) else v) or []
+            r = (json.loads(v) if isinstance(v, str) else v) or []
         except ValueError:
             return []
+        return r if isinstance(r, (list, dict)) else []  # texto/número/booleano solto no lugar da lista: ignora
 
     d.contas_pagar = [{**c, "valor_num": _valor(c.get("valor")), "pago": c.get("status") == "pago"} for c in lista("clinus_contas_pagar")
                       if isinstance(c, dict) and c.get("id") and c.get("descricao") and _valor(c.get("valor")) > 0 and _ISO.match(str(c.get("vencimento") or ""))]
@@ -240,8 +263,11 @@ def carregar_backup(caminho: Path) -> ClinusDados:
                 d.recebido_por_paciente[k] = round(d.recebido_por_paciente.get(k, 0.0) + _valor(pg.get("valor")), 2)
     ret = (bruto.get("stores") or {}).get("clinus_retornos_v1")
     if ret:
-        lista = json.loads(ret) if isinstance(ret, str) else ret
-        d.retornos = [e for e in lista if isinstance(e, dict)]
+        try:
+            bruta = json.loads(ret) if isinstance(ret, str) else ret
+        except ValueError:
+            bruta = []
+        d.retornos = [e for e in (bruta if isinstance(bruta, list) else []) if isinstance(e, dict)]
     return d
 
 

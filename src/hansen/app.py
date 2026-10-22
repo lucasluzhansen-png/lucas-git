@@ -14,11 +14,12 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from hansen import hoje
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 from hansen.cobrador import categoria, decidir
 from hansen.maestro_vivo import achar_backup, carregar_config
 from hansen.painel_comercial import TIPOS, TIPOS_FINANCEIRO, cartoes
-from hansen.tarefas import ler_tarefas
+from hansen.tarefas import escrever_atomico, ler_tarefas
 from hansen.yaml_parser import carregar_todos
 
 PORTA = 8765
@@ -71,7 +72,7 @@ class Servico:
         self.atualizar(forcar=True)
         return self.erro
 
-    def estado(self, perfil: str) -> dict:
+    def estado(self, perfil: str, canal: str = "web") -> dict:
         with self.lock:
             if self.m is None:
                 self.atualizar()
@@ -94,10 +95,10 @@ class Servico:
                         "urgente": t.prioridade in ("amarela", "vermelha"), "dias": dias(t), "categoria": categoria(t.titulo)}
 
             idade = (agora - datetime.fromtimestamp(self.backup.stat().st_mtime)).total_seconds() / 3600
-            arq = self.base / "estado" / f"cobrador_web_{perfil}.json"
-            est = json.loads(arq.read_text(encoding="utf-8")) if arq.exists() else {}
+            arq = self.base / "estado" / f"cobrador_{canal}_{perfil}.json"
+            est = _ler_json_ou_isolar(arq, {}) if arq.exists() else {}
             avisos = decidir(self.pops["MA-01"], tarefas, perfil, agora, est, idade)
-            arq.write_text(json.dumps(est), encoding="utf-8")
+            escrever_atomico(arq, json.dumps(est))
             urgentes = sum(1 for t in minhas if t.prioridade in ("amarela", "vermelha"))
             return {
                 "sem_backup": False, "perfil": perfil, "agora": agora.strftime("%H:%M"),
@@ -162,7 +163,8 @@ def criar_servidor(servico: Servico, token: str, porta: int = PORTA) -> Threadin
                 return self._responder(PAGINA.read_bytes(), "text/html; charset=utf-8")
             if url.path == "/api/estado":
                 perfil = (qs.get("perfil") or ["lucas"])[0]
-                return self._json(servico.estado(perfil if perfil in ("lucas", "recepcao") else "lucas"))
+                canal = "ext" if (qs.get("canal") or [""])[0] == "ext" else "web"  # extensão do navegador cobra no seu próprio ritmo
+                return self._json(servico.estado(perfil if perfil in ("lucas", "recepcao") else "lucas", canal))
             self._responder(b"nao encontrado", "text/plain", 404)
 
         def do_POST(self):
@@ -179,8 +181,11 @@ def criar_servidor(servico: Servico, token: str, porta: int = PORTA) -> Threadin
                 return self._json({"ok": False, "erro": "Pedido inválido."}, 400)
             perfil = corpo.get("perfil") if corpo.get("perfil") in ("lucas", "recepcao") else "lucas"
             if url.path == "/api/concluir":
-                ok = servico.concluir(int(corpo.get("id", -1)), perfil, str(corpo.get("nota", "")))
-                return self._json({"ok": ok})
+                try:
+                    tid = int(corpo.get("id", -1))
+                except (TypeError, ValueError):
+                    return self._json({"ok": False, "erro": "Pedido inválido."}, 400)
+                return self._json({"ok": servico.concluir(tid, perfil, str(corpo.get("nota", "")))})
             if url.path == "/api/atualizar":
                 servico.atualizar(forcar=True)
                 return self._json({"ok": True, "erro": servico.erro})

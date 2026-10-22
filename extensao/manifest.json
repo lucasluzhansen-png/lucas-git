@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Maestro Hansen",
+  "version": "1.0.0",
+  "description": "O Maestro avisa em todas as telas do Clinus. Só conversa com o painel local (127.0.0.1).",
+  "permissions": ["storage", "scripting", "alarms"],
+  "host_permissions": ["http://127.0.0.1/*"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": {"service_worker": "background.js"},
+  "options_page": "opcoes.html",
+  "action": {"default_title": "Maestro Hansen"}
+}

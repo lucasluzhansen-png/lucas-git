@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 
 from hansen.clinus import ClinusDados, Consulta, carregar_backup
@@ -49,7 +50,7 @@ def _peca_pendente(m: Maestro, clinus: ClinusDados, ev: dict) -> str | None:
 
 def rodar(m: Maestro, clinus: ClinusDados, agora: datetime, horas: int = 48) -> list[Item]:
     arq = m.tarefas.arquivo.parent / "lembretes_enviados.json" if m.tarefas.arquivo else None
-    enviados: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
+    enviados: set[str] = set(_ler_json_ou_isolar(arq, [])) if arq and arq.exists() else set()
     limite = _horas_antes(m)
     plano = []
     eventos = {str(e.get("id")): e for e in clinus.agenda}

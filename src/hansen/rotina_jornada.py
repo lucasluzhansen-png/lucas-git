@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 from hansen.clinus import ClinusDados, carregar_backup, data_br
 from hansen.maestro import Maestro
@@ -32,7 +33,7 @@ def _dia(texto) -> date | None:
 
 def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemJ]:
     arq = m.tarefas.arquivo.parent / "jornada.json" if m.tarefas.arquivo else None
-    feitos: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
+    feitos: set[str] = set(_ler_json_ou_isolar(arq, [])) if arq and arq.exists() else set()
     chaves = Chaves(m, "jornada")
     hoje = agora.date()
     itens: list[ItemJ] = []

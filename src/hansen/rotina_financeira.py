@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 
 from datetime import timedelta
@@ -32,7 +33,7 @@ def _ddmm(iso: str) -> str:
 
 def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
     arq = m.tarefas.arquivo.parent / "financeiro.json" if m.tarefas.arquivo else None
-    estado = json.loads(arq.read_text(encoding="utf-8")) if arq and arq.exists() else {}
+    estado = _ler_json_ou_isolar(arq, {}) if arq and arq.exists() else {}
     avisos: dict[str, str] = estado.get("cobrancas", {})
     feitos: set[str] = set(estado.get("feitos", []))
     hoje = agora.date()
@@ -103,7 +104,7 @@ def _brl(v: float) -> str:
 def rodar_clinica(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
     """Contas a pagar, compras, preventivas de equipamentos e fechamento de caixa (FN-02). Cada situação gera UMA sugestão por estado."""
     arq = m.tarefas.arquivo.parent / "financeiro_clinica.json" if m.tarefas.arquivo else None
-    feitos: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
+    feitos: set[str] = set(_ler_json_ou_isolar(arq, [])) if arq and arq.exists() else set()
     hoje = agora.date()
     itens: list[ItemF] = []
     base = {"agora": agora.isoformat()}

@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.agentes.comercial import Comercial
 from hansen.agentes.financeiro import Financeiro
 from hansen.agentes.contabilidade import Contabilidade
 from hansen.agentes.jornada import Jornada
+from hansen.agentes.auditoria import Auditoria
 from hansen.agentes.sala_espera import SalaEspera
 from hansen.agentes.laboratorio import Laboratorio
 from hansen.agentes.recepcao import Recepcao
@@ -41,14 +43,14 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro(), Laboratorio(), Contabilidade(), Jornada(), SalaEspera()]
+        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro(), Laboratorio(), Contabilidade(), Jornada(), SalaEspera(), Auditoria()]
         self.notificador = notificador
         self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
         if estado:
             Path(estado).mkdir(parents=True, exist_ok=True)
         self.resolvidas_auto = 0  # tarefas fechadas sozinhas porque o Clinus mostra que a situação acabou
-        self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text(encoding="utf-8"))) if self._arq_pausas and self._arq_pausas.exists() else set()
+        self.pausados: set[str] = set(_ler_json_ou_isolar(self._arq_pausas, [])) if self._arq_pausas and self._arq_pausas.exists() else set()
         self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 
     def receber_mensagem(self, texto: str, dados: dict | None = None) -> Decisao:
@@ -130,7 +132,7 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa", "cobrar_lab", "sla_lab", "conferir_peca", "os_problema", "agendar_peca", "enviar_contador", "prazo_ir", "confirmacao_bloqueada", "paciente_esperando") else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso", "pagar_conta_vencida", "decidir_compra_critica", "cobrar_repasse", "recurso_glosa", "baixa_pendente", "cobrar_lab", "sla_lab", "conferir_peca", "os_problema", "agendar_peca", "enviar_contador", "prazo_ir", "confirmacao_bloqueada", "paciente_esperando") else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
@@ -166,6 +168,7 @@ class Maestro:
             "confirmacao_bloqueada": "Laboratório: confirmação suspensa, peça não conferida (confirmar a peça antes de falar com o paciente)",
             "paciente_esperando": "Sala de espera: paciente aguardando há mais de 15 minutos (ir até ele, oferecer água, informar a previsão)",
             "avisar_proximo": "Sala de espera: avisar o próximo paciente da retenção",
+            "baixa_pendente": "Auditoria: paciente atendido sem baixa dos procedimentos (marcar como feito, escrever o que foi feito e abrir OS se houve prótese)",
             "iniciar_tratamento": "Jornada: plano aprovado, agendar o início do tratamento",
             "tratamento_parado": "Jornada: tratamento parado, agendar a próxima sessão",
             "retorno_alta": "Jornada: alta concluída, agendar o retorno",
@@ -183,6 +186,6 @@ class Maestro:
                  "cobrar_lab": "laboratorio", "confirmar_prazo_lab": "laboratorio", "sla_lab": "laboratorio", "registrar_prazo_lab": "laboratorio",
                  "conferir_peca": "laboratorio", "os_problema": "laboratorio", "agendar_peca": "laboratorio",
                  "enviar_contador": "contabilidade", "preparar_ir": "contabilidade", "prazo_ir": "contabilidade",
-                 "confirmacao_bloqueada": "laboratorio", "paciente_esperando": "sala_espera", "avisar_proximo": "sala_espera",
+                 "confirmacao_bloqueada": "laboratorio", "paciente_esperando": "sala_espera", "avisar_proximo": "sala_espera", "baixa_pendente": "auditoria",
                  "iniciar_tratamento": "jornada", "tratamento_parado": "jornada", "retorno_alta": "jornada"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

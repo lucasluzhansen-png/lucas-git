@@ -6,6 +6,7 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 from urllib.parse import quote
 
@@ -29,7 +30,7 @@ def achar_backup_recente(pasta: Path) -> Path | None:
 def _mensagens_do_dia(base: Path, hoje: str, novas: list[tuple[str, str]]) -> list[dict]:
     """Mensagens prontas para a Recepção enviar à mão. Ficam salvas durante o dia (para não sumirem se o painel for reaberto)."""
     arq = base / "estado" / "mensagens_hoje.json"
-    atual = json.loads(arq.read_text(encoding="utf-8")) if arq.exists() else {}
+    atual = _ler_json_ou_isolar(arq, {}) if arq.exists() else {}
     msgs = atual.get("mensagens", []) if atual.get("data") == hoje else []
     ja = {(m["destino"], m["texto"]) for m in msgs}
     for destino, texto in novas:
@@ -139,21 +140,30 @@ def executar(backup: Path, agora: datetime, base: Path) -> Path:
 
 
 def executar_completo(backup: Path, agora: datetime, base: Path):
-    from hansen import lembretes, rotina_comercial, rotina_contabilidade, rotina_financeira, rotina_jornada, rotina_laboratorio, rotina_sala_espera
+    from hansen import lembretes, rotina_comercial, rotina_contabilidade, rotina_financeira, rotina_jornada, rotina_laboratorio, rotina_sala_espera, rotina_auditoria
     pops = carregar_todos()
     base.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base / "ledger")
     canal = CanalSimulado()
     m = Maestro(led, pops=pops, estado=base / "estado", notificador=Notificador(canal, led, pops["R-02"]))
     dados = carregar_backup(backup)
-    lembretes.rodar(m, dados, agora, 48)
-    rotina_comercial.rodar(m, dados, agora)
-    rotina_financeira.rodar(m, dados, agora)
-    rotina_financeira.rodar_clinica(m, dados, agora)
-    rotina_laboratorio.rodar(m, dados, agora)
-    rotina_jornada.rodar(m, dados, agora)
-    rotina_sala_espera.rodar(m, dados, agora)
-    rotina_contabilidade.rodar(m, dados, agora, base / "contabilidade")
+    erros = []
+    for nome, passo in (("lembretes", lambda: lembretes.rodar(m, dados, agora, 48)),
+                        ("comercial", lambda: rotina_comercial.rodar(m, dados, agora)),
+                        ("financeiro", lambda: rotina_financeira.rodar(m, dados, agora)),
+                        ("financeiro_clinica", lambda: rotina_financeira.rodar_clinica(m, dados, agora)),
+                        ("laboratorio", lambda: rotina_laboratorio.rodar(m, dados, agora)),
+                        ("jornada", lambda: rotina_jornada.rodar(m, dados, agora)),
+                        ("sala_espera", lambda: rotina_sala_espera.rodar(m, dados, agora)),
+                        ("auditoria", lambda: rotina_auditoria.rodar(m, dados, agora)),
+                        ("contabilidade", lambda: rotina_contabilidade.rodar(m, dados, agora, base / "contabilidade"))):
+        try:  # uma rotina com problema não pode parar as outras
+            passo()
+        except Exception as e:  # noqa: BLE001
+            erros.append(f"{nome}: {type(e).__name__}: {e}")
+    if erros:
+        with (base / "erros_rotinas.log").open("a", encoding="utf-8") as f:
+            f.write(f"{agora:%Y-%m-%d %H:%M}\n" + "\n".join(erros) + "\n")
     msgs = _mensagens_do_dia(base, agora.date().isoformat(), canal.enviadas)
     html = renderizar(m, dados, backup, agora, msgs, analisar(dados))
     destino = base / "painel_do_dia.html"
