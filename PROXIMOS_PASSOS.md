@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (72 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (74 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -19,6 +19,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `cerebro.py`: LLM só classifica o tipo de pedido (guardrails, urgência vai a humano). Testado só com LLM falso; falta testar com `ANTHROPIC_API_KEY`.
 - `maestro.py`: roteia por agentes, respeita nível de autonomia, pausa do RT, cria tarefas.
 - `agentes/recepcao.py` (R-00, R-02), `agentes/rotina.py` (A-01, A-06) e `agentes/comercial.py` (CM-01, CM-02).
+- `folha_aprovacao.py`: gera `docs/folha_aprovacao_pops.html` direto dos YAMLs (`python -m hansen.folha_aprovacao`); refazer sempre que um YAML mudar.
 - `cadastros.py`: relatório de qualidade dos cadastros (`python -m hansen.cadastros "<backup.json>"`): terminal só com contagens; planilha com nomes em `saida/cadastros/` (fora do Git).
 - `rotina_comercial.py`: rotina diária do Comercial (`python -m hansen.rotina_comercial "<backup.json>" agora`); ao final gera e abre `saida/comercial/painel_comercial.html` (`painel_comercial.py`): cartões para o Dr. Lucas com nome, texto formal sugerido (CM-02.yaml, sem valores) e link wa.me (quem envia é o humano pelo app do WhatsApp Business). O arquivo tem nomes/telefones: fica em saida/ (fora do Git).
 - `tarefas_cli.py`: `python -m hansen.tarefas_cli saida\\comercial listar` e `... fechar N "evidência"` (fecha tarefa; o cartão some do painel).
@@ -46,7 +47,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - CM-02 (IA só sugere): retomada de orçamento e reativação; tarefa para o Dr. Lucas.
 - A IA NUNCA cita valores ou condições de pagamento. ÚNICA EXCEÇÃO (RT, 22/10/2026): o parabéns de aniversário informa 15% de abatimento (antes "desconto") no clareamento válido no mês do aniversário (`desconto_clareamento` no CM-01.yaml; 0 desliga e usa o texto simples). A busca na web NÃO confirmou se oferecer desconto é permitido pelo Código de Ética (CFO 118/2012); VALIDAR com o CRO antes do envio real. O sistema só informa o desconto: a Recepção precisa honrá-lo (o Clinus não controla isso).
 - Textos comerciais aprovados pelo RT em 22/10/2026: começam com "Senhor(a) {nome}" (sem "Prezado"); aniversário usa o primeiro nome, tom informal e sincero. "Prezado" foi removido de TODAS as mensagens do sistema (R-00, R-02, CM-01, CM-02); um teste garante. Na mensagem de aniversário a oferta usa a palavra "abatimento" em vez de "desconto" (a substância continua sendo redução de preço: a validação com o CRO continua necessária).
-- Valores CONFIRMADOS pelo RT (22/10/2026, CM-02.yaml): orçamento após 7 dias, parado após 90 dias, 1 contato a cada 15 dias por paciente, máx. 5 sugestões/dia. Ainda ASSUMIDOS: retorno avisado 2 dias antes (CM-01); manutenção vencida após 180 dias (regra do Clinus). Textos das mensagens ainda sem aprovação.
+- Valores CONFIRMADOS pelo RT (22/10/2026, CM-02.yaml): orçamento após 7 dias, parado após 90 dias, 1 contato a cada 15 dias por paciente, máx. 5 sugestões/dia. Ainda ASSUMIDOS: retorno avisado 2 dias antes (CM-01); manutenção vencida após 180 dias (regra do Clinus). Textos das mensagens aprovados pelo RT.
 - Mensagem de aniversário tende a ser categoria "marketing" na WhatsApp Business API (mais cara que utilidade); conferir com o provedor.
 - "Orçamento em aberto" usa a MESMA definição do relatório do Clinus: decisão `pensar` OU zona `orcpendente` OU etapa 7 OU orçamento novo sem aprovação. "Manutenção vencida" = etapa 10 há 180+ dias (também do Clinus). "Base histórica importada" (sem ação humana) é ignorada, como no Clinus. Pacientes na zona `perdidos` não são reativados. Teste com backups reais (21/10 e 09/10): quase nenhum paciente tem `decisao`, nascimento ou retornos preenchidos, então a rotina achou pouco a fazer.
 - Formato do store `clinus_retornos_v1` deduzido do código (campos `pacId`, `status`, `devido`/`data`); validar com backup real.
