@@ -8,5 +8,6 @@
 | FN-01 (agente Financeiro: parcelas) | 22/10/2026 | pendente | Novo POP. Confirmado pelo Dr. Lucas: só sugere, tarefas para a Recepção, atraso após 3 dias. ASSUMIDO: lembrete 3 dias antes; 1 cobrança a cada 7 dias por paciente; 10 sugestões por dia. Textos de cobrança a revisar (sem juros, multa ou ameaça). |
 | FN-02 (Financeiro da clínica) | 22/10/2026 | pendente | Novo POP: contas a pagar, compras, preventiva de equipamentos, fechamento de caixa. Só sugere. ASSUMIDO: conta avisada 2 dias antes; preventiva 15 dias antes; caixa olha 7 dias; compras pendentes vão ao Dr. Lucas. |
 | FN-03 (Financeiro: convênio) | 22/10/2026 | pendente | Novo POP sobre o módulo de guias do Clinus. Só sugere; Recepção. ASSUMIDO: criar guia 3 dias após aprovar; enviar 3 dias após criar; cobrar autorização 7 dias após enviar; fechamento do mês a partir do dia 5. |
+| MA-01 (Maestro cobrador) | 22/10/2026 | pendente | Novo POP. Decidido pelo Dr. Lucas: notificação do Windows, cobrança firme, seg-sex 8h-18h, Dr. Lucas e Recepção. ASSUMIDO: insistir a cada 2 h; escalar para o Dr. Lucas após 2 dias; backup antigo após 24 h; resumo 8h30; fechamento 17h30. |
 
 Regra: só humanos aprovam. Mudança nos POPs (YAML) exige nova linha neste registo.

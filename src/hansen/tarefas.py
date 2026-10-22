@@ -24,6 +24,17 @@ class Tarefa:
     alerta_pendente: bool = False
 
 
+def ler_tarefas(arquivo: Path) -> list[Tarefa]:
+    """Lê só o arquivo de tarefas (sem ledger nem YAML): usado pelo cobrador."""
+    if not Path(arquivo).exists():
+        return []
+    saida = []
+    for d in json.loads(Path(arquivo).read_text(encoding="utf-8")):
+        d["criada_em"] = datetime.fromisoformat(d["criada_em"])
+        saida.append(Tarefa(**d))
+    return saida
+
+
 class TarefaManager:
     def __init__(self, ledger: LedgerManager, pop_a06: POP, agora: Callable[[], datetime] = lambda: datetime.now(timezone.utc), arquivo: Path | None = None):
         self.ledger, self.agora, self.arquivo = ledger, agora, arquivo

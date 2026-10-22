@@ -10,10 +10,17 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Equivalente no PowerShell: `$env:PYTHONPATH="src"; python -m hansen.hoje auto`
 - O painel mostra: mensagens prontas (Recepção envia à mão pelo WhatsApp Business), tarefas do Dr. Lucas, tarefas da Recepção, qualidade dos cadastros e estado do sistema. Modo assistido: nada é enviado automaticamente.
 
+## MAESTRO COM VIDA PRÓPRIA (MA-01) — cobra sozinho
+- Decisões do RT (22/10/2026): notificação do Windows; cobrança FIRME; seg-sex 8h-18h; Dr. Lucas E Recepção (cada um no seu computador).
+- Liga: `instalar_maestro.bat lucas` (ou `recepcao`) agenda um ciclo a cada 15 min, sem janela (`maestro_tick.vbs`). Desliga: `desinstalar_maestro.bat`. Teste do aviso: `testar_aviso.bat`.
+- Cada ciclo (`src/hansen/maestro_vivo.py`): acha o backup mais recente (`hansen-rpg-backup-*.json` em Downloads OU `clinus-backup-latest.json` da pasta de nuvem do Clinus; configure `maestro.config.json` com `{"pastas_backup": ["C:\\...\\OneDrive\\ClinusBackup"]}`), reprocessa se for novo ou a cada 60 min, e cobra (`cobrador.py`, regras em MA-01.yaml): resumo 8h30, insiste a cada 2 h nas urgentes (tom: URGENTE → ATRASADO → IGNORADO), fechamento 17h30, avisa o Dr. Lucas do que está parado com a Recepção há 2+ dias, avisa se o backup tem 24 h+. Avisos NUNCA levam nome de paciente.
+- Tarefas se FECHAM SOZINHAS quando o Clinus mostra que a situação acabou (`sincronizar.py`): conta paga, caixa fechado, guia que avançou, parcela paga, paciente atendido. Registado no ledger como agente.
+- LIMITES: (1) o toast do Windows NÃO foi testado em Windows real (rode `testar_aviso.bat`; sempre grava também `saida\\hoje\\avisos.log`); (2) o computador precisa estar ligado e com o usuário logado; (3) o Maestro só enxerga o que está no backup: o backup automático do Clinus (pasta de nuvem) só grava com o Clinus aberto no Chrome/Edge; (4) cada computador tem o seu estado em `saida\\hoje` (fechar tarefa à mão num PC não aparece no outro; as automáticas funcionam nos dois); (5) o Maestro cobra a EQUIPE sozinho, mas NÃO envia mensagem a paciente sozinho (continua humano).
+
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (100 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (121 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
