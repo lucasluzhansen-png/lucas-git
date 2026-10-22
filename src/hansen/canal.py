@@ -39,6 +39,13 @@ class Notificador:
         self.canal.enviar(destino, texto)
         return self._log("enviar_lembrete", destino, "enviado")
 
+    def enviar_texto(self, pop_id: str, acao: str, destino: str, texto: str, agora: datetime) -> str:
+        """Envio genérico com texto já montado a partir do YAML; respeita a janela comercial."""
+        if not self.na_janela(agora):
+            return self._log(acao, destino, "fora_da_janela", pop_id)
+        self.canal.enviar(destino, texto)
+        return self._log(acao, destino, "enviado", pop_id)
+
     def alertar_rt(self, titulo: str, destino: str, agora: datetime) -> str:
         """Alerta interno ao RT. Madrugada: fica registado, mas silenciado até 07h (A-06)."""
         if agora.hour < SILENCIO_ATE_H:
@@ -46,9 +53,9 @@ class Notificador:
         self.canal.enviar(destino, self._msg["alerta_rt"].format(titulo=titulo))
         return self._log("alerta_rt", destino, "enviado")
 
-    def _log(self, acao, destino, estado) -> str:
+    def _log(self, acao, destino, estado, pop_id=None) -> str:
         self.ledger.registar(
-            pop_id="R-02" if "lembrete" in acao else "A-06",
+            pop_id=pop_id or ("R-02" if "lembrete" in acao else "A-06"),
             ator={"type": "agente_ia", "id": "notificador", "papel": "comunicacao"},
             # ledger é imutável: nunca grava o telefone, só um hash curto para correlacionar eventos
             acao=acao, entrada={"destino_hash": hashlib.sha256(destino.encode()).hexdigest()[:10]}, saida={"estado": estado}, privacidade=PRIV,

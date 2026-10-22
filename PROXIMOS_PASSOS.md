@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (50 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (57 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -18,7 +18,8 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `ledger.py`: hash-chain + Ed25519 gravado em disco (SIMULA o S3 WORM; chave em memória).
 - `cerebro.py`: LLM só classifica o tipo de pedido (guardrails, urgência vai a humano). Testado só com LLM falso; falta testar com `ANTHROPIC_API_KEY`.
 - `maestro.py`: roteia por agentes, respeita nível de autonomia, pausa do RT, cria tarefas.
-- `agentes/recepcao.py` (R-00, R-02) e `agentes/rotina.py` (A-01, A-06).
+- `agentes/recepcao.py` (R-00, R-02), `agentes/rotina.py` (A-01, A-06) e `agentes/comercial.py` (CM-01, CM-02).
+- `rotina_comercial.py`: rotina diária do Comercial (`python -m hansen.rotina_comercial "<backup.json>" agora`).
 - `tarefas.py`: escalada de vermelha em 60 min, fecho só com evidência, veto só do RT, persistência em JSON.
 - `canal.py`: WhatsApp SIMULADO (tom formal, seg-sex 8h-18h). `agendador.py`: `tick()` com silêncio de madrugada.
 - `painel.py` e `simulacao.py`: página HTML e simulação com dados fictícios.
@@ -36,6 +37,15 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Atenção (Clinus): a chave da API Anthropic fica salva no navegador, e o texto da anamnese vai à API quando o recurso está ligado (o próprio app avisa para exigir consentimento do paciente).
 - Parceiros: o RT tem a lista e a passará **no final de tudo**. **LEMBRAR O RT disso ao concluir os próximos passos** (nome, especialidade, contato de cada parceiro).
 - Canal hoje: WhatsApp Business (aplicativo). **Decisão do RT: migrar para a WhatsApp Business API** (provedor oficial), necessária para envio automático. Falta escolher provedor, custo e consentimento do paciente.
+
+## Agente Comercial (decisões do RT, 22/10/2026; POPs novos CM-01 e CM-02, AINDA NÃO APROVADOS)
+- Faz: orçamentos em aberto ("vai pensar"), reativar pacientes parados, aniversariantes, retornos e manutenção.
+- CM-01 (IA envia sozinha): aniversário e lembrete de retorno agendado. Aniversário só com consentimento registado no Clinus (campo `consentimentoComercial`; HOJE NÃO EXISTE no Clinus, então tudo vira tarefa manual até o RT criar esse registo).
+- CM-02 (IA só sugere): retomada de orçamento e reativação; tarefa para o Dr. Lucas.
+- A IA NUNCA cita valores, descontos ou condições de pagamento.
+- Valores ASSUMIDOS (CM-01/CM-02.yaml): orçamento após 7 dias, parado após 90 dias, 1 contato a cada 30 dias, máx. 5 sugestões/dia, retorno avisado 2 dias antes.
+- Mensagem de aniversário tende a ser categoria "marketing" na WhatsApp Business API (mais cara que utilidade); conferir com o provedor.
+- Formato do store `clinus_retornos_v1` deduzido do código (campos `pacId`, `status`, `devido`/`data`); validar com backup real.
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).

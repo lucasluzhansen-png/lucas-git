@@ -32,7 +32,7 @@ def test_telefone_com_ou_sem_mascara_e_ddi(tmp_path):
 
 def test_nao_guarda_cpf_nem_imagens(tmp_path):
     d = carregar_backup(_backup(tmp_path))
-    assert set(d.por_id["p1"]) == {"id", "nome", "tel"}
+    assert not ({"cpf", "imagens", "anamnese", "prontuario"} & set(d.por_id["p1"]))
 
 
 def test_proximas_consultas_abertas_e_com_telefone(tmp_path):

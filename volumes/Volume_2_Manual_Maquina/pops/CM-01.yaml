@@ -1,0 +1,21 @@
+id: "CM-01"
+versao: "1.0"
+manual: "Comercial"
+titulo: "Lembretes de Relacionamento (aniversário e retorno agendado)"
+# Decisão do RT: a IA envia sozinha apenas lembretes simples; nunca cita valores, descontos ou condições.
+automacao: { nivel: "IA_SOZINHA", aprovacao_humana: false }
+regras_de_decisao:
+  - condicao: "Paciente faz aniversário hoje e tem consentimento para mensagens registado"
+    acao: "Enviar parabéns formal, sem oferta, valor ou desconto."
+    efeito: "enviar_parabens"
+  - condicao: "Paciente faz aniversário hoje mas NÃO tem consentimento registado"
+    acao: "Não enviar automaticamente: tarefa para contato manual."
+    efeito: "sem_consentimento"
+  - condicao: "Retorno ou manutenção agendado dentro da antecedência"
+    acao: "Enviar lembrete formal do retorno."
+    efeito: "enviar_lembrete_retorno"
+    # ASSUMIDO: antecedência de 2 dias. Confirmar com a clínica.
+    parametros: { antecedencia_dias: 2 }
+mensagens:
+  parabens: "Prezado(a) Senhor(a) {nome}, a equipe da Hansen Odontologia deseja um feliz aniversário, com muita saúde e alegria."
+  retorno_agendado: "Prezado(a) Senhor(a) {nome}, lembramos do seu retorno em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."

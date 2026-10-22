@@ -1,5 +1,6 @@
 """Leitor do backup do Clinus (JSON exportado em "Dados e backup → Exportar JSON").
-Só lê; nunca escreve no Clinus. Guarda apenas id, nome e telefone: CPF, fotos e prontuário ficam de fora."""
+Só lê; nunca escreve no Clinus. Guarda só o necessário (id, nome, telefone, nascimento, decisão do orçamento, última ação,
+consentimento): CPF, fotos, prontuário e anamnese ficam de fora."""
 import json
 import re
 from dataclasses import dataclass, field
@@ -31,6 +32,7 @@ class ClinusDados:
     por_telefone: dict[str, dict] = field(default_factory=dict)
     por_id: dict[str, dict] = field(default_factory=dict)
     agenda: list[dict] = field(default_factory=list)
+    retornos: list[dict] = field(default_factory=list)
 
     def eh_paciente_atual(self, telefone: str | None) -> bool:
         return _digitos(telefone) in self.por_telefone
@@ -60,7 +62,14 @@ def carregar_backup(caminho: Path) -> ClinusDados:
         raise ValueError("Arquivo não parece um backup do Clinus (versao esperada: hrpg_v1).")
     d = ClinusDados(exportado_em=bruto.get("exportadoEm", ""))
     for p in bruto.get("pacientes") or []:
-        enxuto = {"id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", "")}
+        enxuto = {
+            "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
+            "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
+            "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
+            "ativo": not (p.get("deleted") or p.get("arquivado") or p.get("ativo") is False),
+            # opt-in para mensagens comerciais: só vale se o Clinus tiver registado explicitamente
+            "consentimento": bool(p.get("consentimentoComercial") or p.get("consentimentoMensagens")),
+        }
         d.por_id[p.get("id")] = enxuto
         if _digitos(p.get("tel")):
             d.por_telefone[_digitos(p["tel"])] = enxuto
@@ -68,6 +77,10 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     if agenda:  # o backup guarda cada store como texto JSON
         lista = json.loads(agenda) if isinstance(agenda, str) else agenda
         d.agenda = [e for e in lista if isinstance(e, dict)]
+    ret = (bruto.get("stores") or {}).get("clinus_retornos_v1")
+    if ret:
+        lista = json.loads(ret) if isinstance(ret, str) else ret
+        d.retornos = [e for e in lista if isinstance(e, dict)]
     return d
 
 

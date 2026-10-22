@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.agentes.comercial import Comercial
 from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
 from hansen.canal import Notificador
@@ -24,6 +25,7 @@ class Decisao:
     acao: str
     detalhe: str
     tarefa_id: int | None = None
+    envio: str | None = None  # enviado | fora_da_janela | None
 
 
 class Maestro:
@@ -33,7 +35,7 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops), Rotina()]
+        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops)]
         self.notificador = notificador
         self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
@@ -63,7 +65,7 @@ class Maestro:
         # Regra de ouro: autonomia vem do nível do POP, não do código.
         autonomo = pop.automacao.nivel in AUTONOMOS and not pop.automacao.aprovacao_humana
         estado = "executado" if autonomo else "aguarda_humano"
-        return self._fechar(prop.pop_id, estado, prop.efeito, prop.detalhe, tipo, texto, dados, prop.tarefa)
+        return self._fechar(prop.pop_id, estado, prop.efeito, prop.detalhe, tipo, texto, dados, prop.tarefa, prop.mensagem)
 
     def pausar(self, agente: str, por: str, papel: str) -> bool:
         return self._alternar_pausa(agente, por, papel, pausar=True)
@@ -86,7 +88,7 @@ class Maestro:
         )
         return ok
 
-    def _fechar(self, pop_id, estado, acao, detalhe, tipo, texto, dados=None, tarefa_req=None) -> Decisao:
+    def _fechar(self, pop_id, estado, acao, detalhe, tipo, texto, dados=None, tarefa_req=None, mensagem=None) -> Decisao:
         dados = dados or {}
         self.ledger.registar(
             pop_id=pop_id,
@@ -100,10 +102,16 @@ class Maestro:
         if acao == "enviar_lembrete" and estado == "executado" and self.notificador and dados.get("telefone"):
             self.notificador.lembrete_paciente(
                 dados.get("nome", ""), dados["telefone"], datetime.fromisoformat(dados["consulta_em"]), datetime.fromisoformat(dados["agora"]))
-        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req, dados.get("consulta_id"))
-        return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None)
+        envio = None
+        if mensagem and estado == "executado" and self.notificador and dados.get("telefone") and dados.get("agora"):
+            texto_msg = self.pops[mensagem["pop"]].mensagens[mensagem["template"]].format(
+                nome=dados.get("nome", ""), data_hora=dados.get("data_hora", ""))
+            envio = self.notificador.enviar_texto(pop_id, str(acao), dados["telefone"], texto_msg, datetime.fromisoformat(dados["agora"]))
+        ref = f"consulta {dados['consulta_id']}" if dados.get("consulta_id") else (f"paciente {dados['ref']}" if dados.get("ref") else None)
+        tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req, ref)
+        return Decisao(pop_id, estado, str(acao), detalhe, tarefa.id if tarefa else None, envio)
 
-    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe, tarefa_req=None, consulta_id=None):
+    def _tarefa_para_humano(self, pop_id, estado, acao, detalhe, tarefa_req=None, ref=None):
         """Tudo que depende de gente vira tarefa cobrada pelo A-06; o que a IA executou sozinha, não."""
         if tarefa_req and estado == "executado":  # pedido explícito do agente (ex.: A-06 IA_EXECUTA)
             return self.tarefas.criar(**tarefa_req)
@@ -117,9 +125,11 @@ class Maestro:
             "sem_regra": "A IA não encontrou regra para este pedido: tratar manualmente",
             "encaminhar_agendamento": "Agendar paciente: serviço realizado pela clínica",
             "atendimento_clinico_humano": "Paciente atual: dentista faz o 1º atendimento e encaminha",
+            "retomar_orcamento": "Retomar contato: orçamento em aberto ('vai pensar')",
+            "reativar_paciente": "Reativar paciente parado: contato de relacionamento",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
-        if consulta_id:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
-            titulo += f" [consulta {consulta_id}]"
+        if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
+            titulo += f" [{ref}]"
         quem = self.pops["A-06"].responsaveis
-        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente"}.get(acao, "aprovacao_ia")
+        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

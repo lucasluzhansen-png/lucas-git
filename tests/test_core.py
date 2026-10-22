@@ -10,7 +10,7 @@ ATOR = {"type": "humano", "id": "u1", "papel": "rt"}
 
 
 def test_13_pops_validos():
-    assert len(carregar_todos()) == 13
+    assert len(carregar_todos()) == 15
 
 
 def test_ledger_cadeia_e_adulteracao(tmp_path):

@@ -1,0 +1,17 @@
+id: "CM-02"
+versao: "1.0"
+manual: "Comercial"
+titulo: "Retomada de Orçamentos e Reativação de Pacientes"
+# Decisão do RT: a IA só sugere; um humano (Dr. Lucas) faz o contato. Nunca citar valores, descontos ou condições.
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Orçamento em aberto ('vai pensar') há mais dias que o limite"
+    acao: "Sugerir retomada do contato pela equipe, sem citar valores ou descontos."
+    efeito: "retomar_orcamento"
+    # ASSUMIDO: 7 dias. Confirmar com a clínica.
+    parametros: { dias_orcamento: 7 }
+  - condicao: "Paciente sem contato há mais dias que o limite e sem consulta futura"
+    acao: "Sugerir contato de relacionamento pela equipe, sem promoções."
+    efeito: "reativar_paciente"
+    # ASSUMIDO: 90 dias parado; no máximo 1 contato comercial a cada 30 dias por paciente; até 5 sugestões por dia.
+    parametros: { dias_parado: 90, intervalo_contato_dias: 30, maximo_por_dia: 5 }
