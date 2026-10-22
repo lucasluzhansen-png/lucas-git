@@ -2,12 +2,16 @@ id: "CM-01"
 versao: "1.0"
 manual: "Comercial"
 titulo: "Lembretes de Relacionamento (aniversário e retorno agendado)"
-# Decisão do RT: a IA envia sozinha apenas lembretes simples; nunca cita valores, descontos ou condições.
+# Decisão do RT: a IA envia sozinha apenas lembretes simples. EXCEÇÃO ÚNICA (RT, 22/10/2026): o parabéns de aniversário cita o
+# desconto de clareamento abaixo. Nenhuma outra mensagem cita valores, descontos ou condições.
+# PENDENTE: validar a oferta com o CRO / Código de Ética (CFO 118/2012) antes de ativar o envio real.
+# Para desligar a oferta: desconto_clareamento: 0 (passa a usar o modelo "parabens_simples").
 automacao: { nivel: "IA_SOZINHA", aprovacao_humana: false }
 regras_de_decisao:
   - condicao: "Paciente faz aniversário hoje e tem consentimento para mensagens registado"
-    acao: "Enviar parabéns formal, sem oferta, valor ou desconto."
+    acao: "Enviar parabéns informal e sincero, com a oferta de desconto no clareamento válida no mês do aniversário."
     efeito: "enviar_parabens"
+    parametros: { desconto_clareamento: 15 }
   - condicao: "Paciente faz aniversário hoje mas NÃO tem consentimento registado"
     acao: "Não enviar automaticamente: tarefa para contato manual."
     efeito: "sem_consentimento"
@@ -17,5 +21,6 @@ regras_de_decisao:
     # ASSUMIDO: antecedência de 2 dias. Confirmar com a clínica.
     parametros: { antecedencia_dias: 2 }
 mensagens:
-  parabens: "Prezado(a) Senhor(a) {nome}, a equipe da Hansen Odontologia deseja um feliz aniversário, com muita saúde e alegria."
-  retorno_agendado: "Prezado(a) Senhor(a) {nome}, lembramos do seu retorno em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."
+  parabens: "{primeiro_nome}, feliz aniversário! Toda a equipe da Hansen Odontologia deseja que o seu novo ano de vida seja cheio de saúde, alegria e muitos sorrisos. De presente, você tem {desconto_clareamento}% de desconto no clareamento durante todo o mês do seu aniversário. Um grande abraço!"
+  parabens_simples: "{primeiro_nome}, feliz aniversário! Toda a equipe da Hansen Odontologia deseja que o seu novo ano de vida seja cheio de saúde, alegria e muitos sorrisos. Um grande abraço!"
+  retorno_agendado: "Senhor(a) {nome}, lembramos do seu retorno em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."

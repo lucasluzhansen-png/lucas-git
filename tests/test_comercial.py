@@ -21,14 +21,19 @@ PACS = [
 RET = [{"id": "r1", "pacId": "p5", "data": "2026-03-11", "status": "aberto"}, {"id": "r2", "pacId": "p5", "data": "2026-03-30"}]
 
 
-def _setup(tmp_path):
+def _backup_clinus(tmp_path):
     f = tmp_path / "b.json"
     f.write_text(json.dumps({"versao": "hrpg_v1", "pacientes": PACS,
                              "stores": {"clinus_retornos_v1": json.dumps(RET), "clinus_agenda_v2": "[]"}}), encoding="utf-8")
+    return carregar_backup(f)
+
+
+def _setup(tmp_path):
+    c = _backup_clinus(tmp_path)
     led = LedgerManager(tmp_path / "l")
     canal = CanalSimulado()
     m = Maestro(led, estado=tmp_path / "est", notificador=Notificador(canal, led, carregar_todos()["R-02"]))
-    return m, carregar_backup(f), canal
+    return m, c, canal
 
 
 def _extra(c, **campos):
@@ -61,11 +66,35 @@ def test_orcamento_e_parado_viram_sugestao_para_o_dr_lucas(tmp_path):
     assert len(ts) == 2  # Caio (orçamento) e Davi (parado); Eva cedo demais; Gil arquivado
 
 
-def test_sem_valores_ou_descontos_nas_mensagens_e_tarefas(tmp_path):
+def test_so_o_aniversario_cita_desconto_e_nenhuma_mensagem_cita_valor(tmp_path):
     m, c, canal = _setup(tmp_path)
     rodar(m, c, AGORA)
-    tudo = " ".join(t for _, t in canal.enviadas) + " ".join(t.titulo for t in m.tarefas.tarefas.values())
-    assert "R$" not in tudo and "desconto" not in tudo.lower().replace("sem citar valores ou descontos", "")
+    for _, t in canal.enviadas:
+        assert "R$" not in t
+        if "aniversário" not in t:
+            assert "desconto" not in t.lower()
+    aniv = next(t for _, t in canal.enviadas if "aniversário" in t)
+    assert aniv.startswith("Ana, feliz aniversário!") and "15% de desconto no clareamento" in aniv and "mês do seu aniversário" in aniv
+    assert "Prezado" not in aniv
+    assert not any("%" in t.titulo or "R$" in t.titulo for t in m.tarefas.tarefas.values())
+
+
+def test_oferta_desligada_usa_texto_simples(tmp_path):
+    pops = carregar_todos()
+    for r in pops["CM-01"].regras_de_decisao:
+        if r.efeito == "enviar_parabens":
+            r.parametros["desconto_clareamento"] = 0
+    led = LedgerManager(tmp_path / "l")
+    canal = CanalSimulado()
+    m = Maestro(led, pops=pops, estado=tmp_path / "est", notificador=Notificador(canal, led, pops["R-02"]))
+    rodar(m, _backup_clinus(tmp_path), AGORA)
+    aniv = next(t for _, t in canal.enviadas if "aniversário" in t)
+    assert "desconto" not in aniv.lower() and "%" not in aniv
+
+
+def test_textos_comerciais_sem_prezado(tmp_path):
+    for pid in ("CM-01", "CM-02"):
+        assert not any("Prezado" in t for t in carregar_todos()[pid].mensagens.values())
 
 
 def test_nao_repete_no_mesmo_dia_e_ledger_sem_dados(tmp_path):
@@ -137,6 +166,7 @@ def test_painel_comercial_cartoes_com_nome_texto_e_link(tmp_path):
     cs = {x["nome"]: x for x in cartoes(m, c)}
     assert {"Caio", "Davi", "Bia"} <= set(cs)  # orçamento, parado, aniversário sem consentimento
     assert "analisar o plano" in cs["Caio"]["texto"] and "R$" not in cs["Caio"]["texto"]
+    assert cs["Caio"]["texto"].startswith("Senhor(a) Caio,") and "15%" in cs["Bia"]["texto"]  # card do aniversário sem consentimento leva a oferta
     assert cs["Caio"]["link"].startswith("https://wa.me/5571900000003?text=")
     html = gerar(m, c, tmp_path / "p.html", AGORA).read_text(encoding="utf-8")
     assert "Revise o texto" in html and "Caio" in html

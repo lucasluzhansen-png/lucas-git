@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 from hansen.clinus import ClinusDados, _digitos
 from hansen.maestro import Maestro
+from hansen.textos import modelo_aniversario, texto as montar_texto
 
 # prefixo do título da tarefa → (modelo, POP, rótulo)
 TIPOS = {
@@ -33,7 +34,9 @@ def cartoes(m: Maestro, clinus: ClinusDados) -> list[dict]:
         if not pac:
             continue
         modelo, pop, rotulo = tipo[1]
-        texto = m.pops[pop].mensagens[modelo].format(nome=pac["nome"])
+        if modelo == "parabens":
+            modelo = modelo_aniversario(m.pops[pop])
+        texto = montar_texto(m.pops[pop], modelo, pac["nome"])
         dig = _digitos(pac["tel"])
         dias = re.search(r"há (\d+) dias", t.titulo)
         saida.append({"tarefa": t.id, "rotulo": rotulo, "nome": pac["nome"], "dias": dias.group(1) if dias else "",
@@ -64,7 +67,7 @@ h1{{font-size:1.3rem}} .aviso{{font-size:.85rem;opacity:.8;border-left:4px solid
 .b{{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px}} .sem{{color:#c62828;font-size:.9rem}}
 </style>
 <h1>Painel comercial · {agora:%d/%m/%Y %H:%M}</h1>
-<div class="aviso">Sugestões da IA para o Dr. Lucas. <b>Revise o texto antes de enviar.</b> A IA não cita valores, descontos ou condições de pagamento; se o paciente perguntar, responda você.
+<div class="aviso">Sugestões da IA para o Dr. Lucas. <b>Revise o texto antes de enviar.</b> A IA não cita valores ou condições de pagamento (única exceção: o desconto de aniversário no clareamento, definido pelo RT); se o paciente perguntar, responda você.
 Este arquivo tem nomes e telefones: uso interno, não compartilhe.</div>
 {blocos}
 </html>"""

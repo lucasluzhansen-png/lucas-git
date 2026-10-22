@@ -22,6 +22,6 @@ regras_de_decisao:
     parametros: { dias_parado: 90, intervalo_contato_dias: 15, maximo_por_dia: 5 }
 # Textos sugeridos para o humano enviar (nunca com valores, descontos ou condições de pagamento).
 mensagens:
-  retomar_orcamento: "Prezado(a) Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber se o(a) senhor(a) teve a oportunidade de analisar o plano que apresentamos e se podemos esclarecer alguma dúvida. Ficamos à disposição."
-  reativar_paciente: "Prezado(a) Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber como o(a) senhor(a) tem passado. Se desejar agendar uma avaliação, estamos à disposição."
-  revisar_manutencao: "Prezado(a) Senhor(a) {nome}, a Hansen Odontologia lembra que está na época de uma revisão do seu tratamento. Podemos agendar um horário conveniente?"
+  retomar_orcamento: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber se o(a) senhor(a) teve a oportunidade de analisar o plano que apresentamos e se podemos esclarecer alguma dúvida. Ficamos à disposição."
+  reativar_paciente: "Senhor(a) {nome}, aqui é da Hansen Odontologia. Gostaríamos de saber como o(a) senhor(a) tem passado. Se desejar agendar uma avaliação, estamos à disposição."
+  revisar_manutencao: "Senhor(a) {nome}, a Hansen Odontologia lembra que está na época de uma revisão do seu tratamento. Podemos agendar um horário conveniente?"

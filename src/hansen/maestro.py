@@ -12,6 +12,7 @@ from hansen.cerebro import Cerebro
 from hansen.clinus import ClinusDados
 from hansen.ledger import LedgerManager
 from hansen.tarefas import TarefaManager
+from hansen.textos import texto as montar_texto
 from hansen.yaml_parser import POP, carregar_todos
 
 # Quem pode agir sozinho. Tudo o resto vira pedido de aprovação humana.
@@ -104,8 +105,7 @@ class Maestro:
                 dados.get("nome", ""), dados["telefone"], datetime.fromisoformat(dados["consulta_em"]), datetime.fromisoformat(dados["agora"]))
         envio = None
         if mensagem and estado == "executado" and self.notificador and dados.get("telefone") and dados.get("agora"):
-            texto_msg = self.pops[mensagem["pop"]].mensagens[mensagem["template"]].format(
-                nome=dados.get("nome", ""), data_hora=dados.get("data_hora", ""))
+            texto_msg = montar_texto(self.pops[mensagem["pop"]], mensagem["template"], dados.get("nome", ""), data_hora=dados.get("data_hora", ""))
             envio = self.notificador.enviar_texto(pop_id, str(acao), dados["telefone"], texto_msg, datetime.fromisoformat(dados["agora"]))
         ref = f"consulta {dados['consulta_id']}" if dados.get("consulta_id") else (f"paciente {dados['ref']}" if dados.get("ref") else None)
         tarefa = self._tarefa_para_humano(pop_id, estado, str(acao), detalhe, tarefa_req, ref)
