@@ -27,6 +27,11 @@ regras_de_decisao:
     efeito: "alertar_humano"
     # Aprovado pelo RT: avisar 1 dia depois da chegada.
     parametros: { dias_conferencia: 1 }
+  - condicao: "Peça retornou do laboratório e o paciente não tem consulta futura marcada"
+    acao: "Avisar a Recepção para agendar a prova ou a instalação (cruza a OS com a agenda do Clinus pelo paciente)."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 1 dia depois da chegada.
+    parametros: { dias_sem_agenda: 1 }
   - condicao: "OS marcada com problema no Clinus"
     acao: "Avisar a Recepção e o dentista; resolver com o laboratório."
     efeito: "alertar_humano"

@@ -36,6 +36,9 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemL]:
     hoje = agora.date()
     itens: list[ItemL] = []
     base = {"agora": agora.isoformat()}
+    # pacientes com consulta futura marcada (mesma leitura da agenda do Clinus usada pelo comercial)
+    com_consulta = {e.get("pacId") for e in clinus.agenda
+                    if (e.get("data") or "") >= hoje.isoformat() and (e.get("status") or "") in ("agendado", "confirmado")}
 
     def sugerir(chave, acao, o, detalhe):
         chaves.marcar_ativa(chave)
@@ -73,6 +76,11 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemL]:
             chegou = data_br((o.get("marcos") or {}).get("retornou"))
             if chegou and (hoje - chegou).days >= _p(m, "dias_conferencia"):
                 sugerir(f"os|{num}|conferir", "conferir_peca", o, f"{rot}: retornou em {chegou:%d/%m} e a conferência não foi registada")
+
+        if etapa == "retornou" and o.get("pacId") and o["pacId"] not in com_consulta:
+            chegou = data_br((o.get("marcos") or {}).get("retornou"))
+            if chegou and (hoje - chegou).days >= _p(m, "dias_sem_agenda"):
+                sugerir(f"os|{num}|semagenda", "agendar_peca", o, f"{rot}: a peça chegou em {chegou:%d/%m} e o paciente não tem consulta marcada")
 
     feitos &= chaves.ativas
     chaves.fechar_resolvidas()
