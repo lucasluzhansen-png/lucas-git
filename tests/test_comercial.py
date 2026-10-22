@@ -128,3 +128,37 @@ def test_perdidos_nao_sao_reativados(tmp_path):
     c.por_id.clear()
     _extra(c, id="p", zona="perdidos", ultima_acao="2025-01-01T00:00:00Z")
     assert rodar(m, c, AGORA) == []
+
+
+def test_painel_comercial_cartoes_com_nome_texto_e_link(tmp_path):
+    from hansen.painel_comercial import cartoes, gerar
+    m, c, _ = _setup(tmp_path)
+    rodar(m, c, AGORA)
+    cs = {x["nome"]: x for x in cartoes(m, c)}
+    assert {"Caio", "Davi", "Bia"} <= set(cs)  # orçamento, parado, aniversário sem consentimento
+    assert "analisar o plano" in cs["Caio"]["texto"] and "R$" not in cs["Caio"]["texto"]
+    assert cs["Caio"]["link"].startswith("https://wa.me/5571900000003?text=")
+    html = gerar(m, c, tmp_path / "p.html", AGORA).read_text(encoding="utf-8")
+    assert "Revise o texto" in html and "Caio" in html
+
+
+def test_painel_some_quando_tarefa_e_fechada(tmp_path):
+    from hansen.painel_comercial import cartoes
+    m, c, _ = _setup(tmp_path)
+    rodar(m, c, AGORA)
+    t = next(t for t in m.tarefas.tarefas.values() if "orçamento" in t.titulo)
+    assert m.tarefas.fechar(t.id, "lucas", "contato feito")
+    assert "Caio" not in {x["nome"] for x in cartoes(m, c)}
+
+
+def test_cli_de_tarefas_lista_e_fecha(tmp_path):
+    from hansen.tarefas_cli import main
+    m, c, _ = _setup(tmp_path)
+    rodar(m, c, AGORA)
+    base = tmp_path  # _setup usa tmp_path/est e tmp_path/l; a CLI espera ledger/ e estado/
+    (base / "estado").mkdir(exist_ok=True)
+    (base / "estado" / "tarefas.json").write_text((tmp_path / "est" / "tarefas.json").read_text(encoding="utf-8"), encoding="utf-8")
+    (base / "ledger").mkdir(exist_ok=True)
+    assert main([str(base), "listar"]) == 0
+    assert main([str(base), "fechar", "1"]) == 1  # sem evidência
+    assert main([str(base), "fechar", "1", "contato feito"]) == 0

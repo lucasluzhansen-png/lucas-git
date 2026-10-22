@@ -155,3 +155,11 @@ if __name__ == "__main__":  # python -m hansen.rotina_comercial backup.json [AAA
         raise SystemExit(f"Não consegui ler o backup: {e}")
     print(formatar(rodar(maestro, dados, agora)))
     print(f"\nMensagens (simuladas): {len(canal.enviadas)} | ledger íntegro: {led.verificar()}")
+    from hansen.painel_comercial import cartoes, gerar
+    painel = gerar(maestro, dados, base_dir / "painel_comercial.html", agora)
+    print(f"\nPAINEL COMERCIAL ({len(cartoes(maestro, dados))} sugestões abertas): {painel.resolve()}")
+    try:
+        import webbrowser
+        webbrowser.open(painel.resolve().as_uri())
+    except Exception:
+        pass
