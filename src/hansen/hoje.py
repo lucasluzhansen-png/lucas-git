@@ -139,7 +139,7 @@ def executar(backup: Path, agora: datetime, base: Path) -> Path:
 
 
 def executar_completo(backup: Path, agora: datetime, base: Path):
-    from hansen import lembretes, rotina_comercial, rotina_contabilidade, rotina_financeira, rotina_jornada, rotina_laboratorio, rotina_sala_espera
+    from hansen import lembretes, rotina_comercial, rotina_contabilidade, rotina_financeira, rotina_jornada, rotina_laboratorio, rotina_sala_espera, rotina_auditoria
     pops = carregar_todos()
     base.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base / "ledger")
@@ -153,6 +153,7 @@ def executar_completo(backup: Path, agora: datetime, base: Path):
     rotina_laboratorio.rodar(m, dados, agora)
     rotina_jornada.rodar(m, dados, agora)
     rotina_sala_espera.rodar(m, dados, agora)
+    rotina_auditoria.rodar(m, dados, agora)
     rotina_contabilidade.rodar(m, dados, agora, base / "contabilidade")
     msgs = _mensagens_do_dia(base, agora.date().isoformat(), canal.enviadas)
     html = renderizar(m, dados, backup, agora, msgs, analisar(dados))

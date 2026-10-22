@@ -61,3 +61,17 @@ def test_sala_de_espera_15_minutos(tmp_path):
     sala(m, c2, datetime(2026, 5, 5, 9, 55))
     assert all(t.estado == "fechada" for t in m.tarefas.tarefas.values())  # atendimento começou: fecha sozinha
     assert all("Ana" not in t.titulo and "Bia" not in t.titulo for t in m.tarefas.tarefas.values())
+
+
+def test_auditor_de_baixas(tmp_path):
+    from hansen.rotina_auditoria import rodar as audit
+    ag = [{"id": "e1", "pacId": "p1", "data": "2026-05-05", "hora": "09:00", "dur": 30, "status": "atendida", "fichaPendente": True}]
+    m, c = _setup(tmp_path, ag)
+    assert audit(m, c, datetime(2026, 5, 5, 10, 20)) == []  # menos de 60 min após o fim
+    assert [i.tipo for i in audit(m, c, datetime(2026, 5, 5, 10, 31))] == ["baixa_pendente"]
+    assert audit(m, c, datetime(2026, 5, 5, 11, 0)) == []  # sem repetir
+    ag[0]["fichaPendente"] = False
+    _, c2 = _setup(tmp_path, ag, nome="b2")
+    audit(m, c2, datetime(2026, 5, 5, 11, 5))
+    assert all(t.estado == "fechada" for t in m.tarefas.tarefas.values())  # baixa dada: fecha sozinha
+    assert all("Ana" not in t.titulo for t in m.tarefas.tarefas.values())

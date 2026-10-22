@@ -1,0 +1,13 @@
+id: "AU-01"
+versao: "1.0"
+manual: "Auditoria"
+titulo: "Auditor de baixas: paciente atendido sem baixa dos procedimentos"
+# A IA só AVISA o dentista; registrar o que foi feito é humano. Aviso sem nome de paciente.
+# Decisão do RT em 22/10/2026: avisar 1 h após o atendimento (o resumo das 17h30 é o fechamento do MA-01).
+# v1 usa a agenda do Clinus: status "atendida" com fichaPendente verdadeiro. Falta: checar "prótese feita sem OS" (precisa do campo de procedimento realizado).
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Paciente atendido e a ficha (procedimentos feitos) continua pendente 60 minutos após o fim da consulta"
+    acao: "Avisar o Dr. Lucas para marcar o procedimento como feito e escrever o que foi feito; se houve trabalho de prótese, abrir a OS."
+    efeito: "alertar_humano"
+    parametros: { minutos_apos_atendimento: 60 }

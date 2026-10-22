@@ -7,7 +7,7 @@ from pathlib import Path
 from hansen.textos import modelo_aniversario, variaveis
 from hansen.yaml_parser import POP, carregar_todos
 
-POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02", "FN-03", "LB-01", "CT-01", "JN-01", "R-01", "MA-01"]
+POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01", "FN-02", "FN-03", "LB-01", "CT-01", "JN-01", "R-01", "AU-01", "MA-01"]
 NIVEL = {"HUMANO": "Só humano age", "IA_SUGERE": "A IA sugere; um humano decide", "IA_AUDITA": "A IA audita", "IA_EXECUTA": "A IA faz sozinha", "IA_SOZINHA": "A IA faz sozinha"}
 MUDOU = [
     "R-00: escopo ampliado (orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas, próteses encaminhados para agendar); serviço fora do escopo: indicar profissionais parceiros; paciente atual: dentista faz o 1º atendimento e encaminha.",
