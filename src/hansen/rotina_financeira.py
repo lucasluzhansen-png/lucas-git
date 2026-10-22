@@ -6,7 +6,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from hansen.clinus import ClinusDados, carregar_backup, situacao_parcelas
+from datetime import timedelta
+
+from hansen.clinus import ClinusDados, carregar_backup, data_br, situacao_parcelas
 from hansen.maestro import Maestro
 
 
@@ -80,6 +82,85 @@ def formatar(itens: list[ItemF]) -> str:
     return "\n".join(linhas) if itens else "Nenhuma parcela a cobrar ou lembrar hoje."
 
 
+def _param_fn02(m: Maestro, chave: str) -> int:
+    return next(r.parametros[chave] for r in m.pops["FN-02"].regras_de_decisao if chave in r.parametros)
+
+
+def _brl(v: float) -> str:
+    return f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def rodar_clinica(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemF]:
+    """Contas a pagar, compras, preventivas de equipamentos e fechamento de caixa (FN-02). Cada situação gera UMA sugestão por estado."""
+    arq = m.tarefas.arquivo.parent / "financeiro_clinica.json" if m.tarefas.arquivo else None
+    feitos: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
+    hoje = agora.date()
+    itens: list[ItemF] = []
+    base = {"agora": agora.isoformat()}
+
+    def sugerir(chave, tipo_evento, rotulo, nome, detalhe, ref, **extra):
+        if chave in feitos:
+            return
+        d = m.processar(tipo_evento, dados={**base, "ref_txt": ref, "detalhe": detalhe, **extra})
+        feitos.add(chave)
+        itens.append(ItemF(rotulo, nome, f"{detalhe} (tarefa #{d.tarefa_id})"))
+
+    # 1) Contas a pagar
+    antes = _param_fn02(m, "contas_dias_antes")
+    for c in sorted(clinus.contas_pagar, key=lambda c: c["vencimento"]):
+        if c["pago"]:
+            continue
+        venc = data_br(c["vencimento"])
+        dias = (venc - hoje).days
+        if dias > antes:
+            continue
+        vencida = dias < 0
+        quando = f"venceu em {venc:%d/%m}" if vencida else (f"vence hoje" if dias == 0 else f"vence em {venc:%d/%m}")
+        sugerir(f"conta|{c['id']}|{'vencida' if vencida else 'a_vencer'}", "conta_pagar", "conta", c["descricao"],
+                f"{c['descricao']} ({_brl(c['valor_num'])}) {quando}", f"conta {c['id']}", vencida=vencida)
+
+    # 2) Compras (status do Clinus: pendente aguarda o dono; aprovado: fazer o pedido; adiado volta a pendente na data)
+    for c in clinus.compras:
+        status = c.get("status") or "pendente"
+        if status == "adiado":
+            ate = data_br(c.get("adiadoAte"))
+            status = "pendente" if ate and ate <= hoje else "adiado"
+        crit = c.get("urgencia") == "critico"
+        rot = f"{c['produto']} (qtd {c.get('qtd', 1)})"
+        if status == "pendente":
+            sugerir(f"compra|{c['id']}|pendente", "compra", "compra", c["produto"], f"{rot}{' · CRÍTICO: repor já' if crit else ''}",
+                    f"compra {c['id']}", acao="decidir_compra_critica" if crit else "decidir_compra")
+        elif status == "aprovado":
+            sugerir(f"compra|{c['id']}|aprovado", "compra", "compra", c["produto"], f"{rot}: aprovada, falta fazer o pedido",
+                    f"compra {c['id']}", acao="fazer_pedido")
+
+    # 3) Preventiva de equipamentos
+    antes_eq = _param_fn02(m, "equipamentos_dias_antes")
+    for e in clinus.equipamentos:
+        prox = data_br(e.get("proximaEm"))
+        if e.get("ativo") is False or not prox or (prox - hoje).days > antes_eq:
+            continue
+        sugerir(f"equip|{e.get('id')}|{prox}", "equipamento", "equipamento", e.get("nome", "equipamento"),
+                f"{e.get('nome', 'Equipamento')}: preventiva prevista para {prox:%d/%m}" + (" (JÁ PASSOU)" if prox < hoje else ""),
+                f"equipamento {e.get('id')}")
+
+    # 4) Fechamento de caixa: dia anterior com recebimento e sem fechamento registado
+    fechados = {c["data"] for c in clinus.caixa}
+    for k in range(1, _param_fn02(m, "caixa_dias_retroativos") + 1):
+        dia = hoje - timedelta(days=k)
+        if clinus.recebido_por_dia.get(dia.isoformat(), 0) > 0 and dia.isoformat() not in fechados:
+            sugerir(f"caixa|{dia}", "caixa_aberto", "caixa", f"{dia:%d/%m}", f"Caixa de {dia:%d/%m} sem fechamento registado", f"caixa {dia}")
+
+    if arq:
+        arq.write_text(json.dumps(sorted(feitos)), encoding="utf-8")
+    return itens
+
+
+def formatar_clinica(itens: list[ItemF]) -> str:
+    rot = {"conta": "Conta a pagar", "compra": "Compra", "equipamento": "Equipamento", "caixa": "Caixa"}
+    return "\n".join([f"{'Tipo':<15} O que aconteceu"] + [f"{rot[i.tipo]:<15} {i.resultado}" for i in itens]) if itens else "Nada pendente na rotina da clínica hoje."
+
+
 if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AAAA-MM-DDTHH:MM|agora]
     from hansen.canal import CanalSimulado, Notificador
     from hansen.ledger import LedgerManager
@@ -100,6 +181,8 @@ if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AA
     except (ValueError, KeyError) as e:
         raise SystemExit(f"Não consegui ler o backup: {e}")
     print(formatar(rodar(maestro, dados, agora)))
+    print("\n--- Rotina da clínica (contas, compras, equipamentos, caixa) ---")
+    print(formatar_clinica(rodar_clinica(maestro, dados, agora)))
     painel = gerar(maestro, dados, base_dir / "painel_financeiro.html", agora, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO)
     print(f"\nPAINEL FINANCEIRO ({len(cartoes(maestro, dados, 'financeiro', TIPOS_FINANCEIRO))} sugestões abertas): {painel.resolve()}")
     print(f"Ledger íntegro: {led.verificar()}")

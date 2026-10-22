@@ -33,6 +33,11 @@ class ClinusDados:
     por_id: dict[str, dict] = field(default_factory=dict)
     agenda: list[dict] = field(default_factory=list)
     retornos: list[dict] = field(default_factory=list)
+    contas_pagar: list[dict] = field(default_factory=list)
+    compras: list[dict] = field(default_factory=list)
+    equipamentos: list[dict] = field(default_factory=list)
+    caixa: list[dict] = field(default_factory=list)
+    recebido_por_dia: dict[str, float] = field(default_factory=dict)  # "AAAA-MM-DD" → total recebido (para conferir o fechamento de caixa)
     stores_brutos: dict = field(default_factory=dict)  # só para diagnóstico de estrutura; nada daqui é usado como dado de paciente
 
     def eh_paciente_atual(self, telefone: str | None) -> bool:
@@ -97,6 +102,19 @@ def situacao_parcelas(parcelas: list[dict], pago: float, hoje: date) -> list[dic
     return saida
 
 
+_ISO = re.compile(r"\d{4}-\d{2}-\d{2}$")
+
+
+def data_br(texto) -> date | None:
+    """Data em 'AAAA-MM-DD' ou 'DD/MM/AAAA' (só a parte da data)."""
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(str(texto or "")[:10], fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
 def _historico(p: dict) -> bool:
     """Base importada sem nenhuma ação humana (mesma regra do Clinus, `_ehHistorico`): não é lead nem paciente a reativar."""
     if not p.get("origemImport"):
@@ -142,6 +160,28 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     if agenda:  # o backup guarda cada store como texto JSON
         lista = json.loads(agenda) if isinstance(agenda, str) else agenda
         d.agenda = [e for e in lista if isinstance(e, dict)]
+    stores = bruto.get("stores") or {}
+
+    def lista(chave):
+        v = stores.get(chave)
+        try:
+            return (json.loads(v) if isinstance(v, str) else v) or []
+        except ValueError:
+            return []
+
+    d.contas_pagar = [{**c, "valor_num": _valor(c.get("valor")), "pago": c.get("status") == "pago"} for c in lista("clinus_contas_pagar")
+                      if isinstance(c, dict) and c.get("id") and c.get("descricao") and _valor(c.get("valor")) > 0 and _ISO.match(str(c.get("vencimento") or ""))]
+    d.compras = [c for c in lista("clinus_compras") if isinstance(c, dict) and isinstance(c.get("id"), str) and isinstance(c.get("produto"), str) and c["produto"]]
+    eq = lista("clinus_equipamentos")
+    d.equipamentos = [e for e in (eq.get("equipamentos") if isinstance(eq, dict) else []) or [] if isinstance(e, dict)]
+    d.caixa = [c for c in lista("clinus_caixa") if isinstance(c, dict) and _ISO.match(str(c.get("data") or ""))]
+    for p in bruto.get("pacientes") or []:  # recebimentos por dia (estornados e transferidos não contam), como o caixa do Clinus
+        for pg in ((p.get("orcamento") or {}).get("pagamentos") or []):
+            if not isinstance(pg, dict) or pg.get("estornadoEm") or pg.get("transferido"):
+                continue
+            dia = data_br(pg.get("d")) or data_br(pg.get("iso"))
+            if dia and _valor(pg.get("valor")):
+                d.recebido_por_dia[dia.isoformat()] = round(d.recebido_por_dia.get(dia.isoformat(), 0.0) + _valor(pg.get("valor")), 2)
     ret = (bruto.get("stores") or {}).get("clinus_retornos_v1")
     if ret:
         lista = json.loads(ret) if isinstance(ret, str) else ret

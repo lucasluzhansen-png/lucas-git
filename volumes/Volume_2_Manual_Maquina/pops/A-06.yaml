@@ -17,5 +17,6 @@ responsaveis:
   ligacao_no_show: "recepcao"
   tratar_manual: "recepcao"
   financeiro: "recepcao"  # decisão do RT
+  decisao_compras: "lucas"  # ASSUMIDO: o Clinus diz "aguardando o dono decidir"
   contato_comercial: "lucas"  # decisão do RT
   agendar_paciente: "recepcao"  # decisão do RT: recepção agenda sozinha

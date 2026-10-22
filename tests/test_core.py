@@ -10,7 +10,10 @@ ATOR = {"type": "humano", "id": "u1", "papel": "rt"}
 
 
 def test_todos_os_pops_validos():
-    assert len(carregar_todos()) == 16
+    pops = carregar_todos()
+    originais = {"R-00", "R-02", "R-08", "A-01", "A-06", "B-01", "B-02", "B-12", "C-00", "C-19", "C-20", "S-01", "S-07"}
+    novos = {"CM-01", "CM-02", "FN-01", "FN-02"}
+    assert (originais | novos) <= set(pops)
 
 
 def test_ledger_cadeia_e_adulteracao(tmp_path):

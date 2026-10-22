@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (81 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (87 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -57,7 +57,8 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Escopo pedido: pendências com convênio, fechamento de caixa de convênio, compras dental, manutenção de equipamentos, parcelas em atraso, parcelas a vencer, fechamento de caixa, contas a pagar.
 - Decisões: A IA SÓ SUGERE; responsável: Recepção (A-06.yaml `financeiro`); atraso após 3 dias.
 - FEITO: FN-01 (parcelas a vencer e em atraso). Assumidos: lembrete 3 dias antes, 1 cobrança a cada 7 dias por paciente, 10 sugestões/dia. Cobrança: texto cordial, sem juros/multa/ameaça/negativação (CDC art. 42; conferir com advogado).
-- FALTA (precisa da estrutura real dos stores `clinus_caixa`, `clinus_contas_pagar`, `clinus_compras`, `clinus_equipamentos`, `clinus_convenios`): rodar `python -m hansen.clinus "<backup.json>"` e colar a seção "Financeiro" (só nomes de campos e contagens, sem valores).
+- FEITO também: FN-02 (`rodar_clinica` em `rotina_financeira.py`): contas a pagar (store `clinus_contas_pagar`: id, descricao, valor, vencimento, status pago|pendente), compras (`clinus_compras`: produto, qtd, urgencia, status pendente|adiado|aprovado|pedido|recebido; pendente/crítico vai para o Dr. Lucas, aprovado para a Recepção), preventiva de equipamentos (`clinus_equipamentos.equipamentos[].proximaEm`) e fechamento de caixa (dia com recebimentos em `orcamento.pagamentos` sem registo em `clinus_caixa`). Uma sugestão por estado (não repete). Assumidos: conta 2 dias antes, preventiva 15 dias antes, caixa 7 dias. Estruturas confirmadas lendo o código do Clinus; backup real tinha 1 conta a pagar, 0 compras, 0 equipamentos, sem caixa.
+- FALTA: pendências com convênio e fechamento de caixa de convênio (o store `clinus_convenios` só guarda tabelas de preço por convênio; perguntar ao RT o que é "pendência"), chamados de equipamento parados (campos de `ocorrencias` desconhecidos), diferença de caixa sem explicação (campos do fechamento desconhecidos).
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).

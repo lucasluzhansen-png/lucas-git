@@ -1,0 +1,25 @@
+id: "FN-02"
+versao: "1.0"
+manual: "Financeiro"
+titulo: "Rotina financeira da clínica: contas a pagar, compras, manutenção de equipamentos e fechamento de caixa"
+# Decisão do RT (22/10/2026): a IA só sugere e cobra a equipe; responsável: Recepção (compras: decisão do Dr. Lucas, que é o "dono").
+automacao: { nivel: "IA_SUGERE", aprovacao_humana: true }
+regras_de_decisao:
+  - condicao: "Conta a pagar pendente vence nos próximos dias ou já venceu"
+    acao: "Avisar a Recepção para pagar ou reprogramar a conta antes do vencimento."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 2 dias antes do vencimento.
+    parametros: { contas_dias_antes: 2 }
+  - condicao: "Item de compra pendente aguarda decisão do dono, ou já aprovado e sem pedido feito"
+    acao: "Pendente: Dr. Lucas decide (crítico é urgência). Aprovado: Recepção faz o pedido."
+    efeito: "alertar_humano"
+  - condicao: "Preventiva de equipamento com data prevista próxima ou vencida"
+    acao: "Avisar a Recepção para agendar a manutenção preventiva com o fornecedor."
+    efeito: "alertar_humano"
+    # ASSUMIDO: avisar 15 dias antes da data prevista.
+    parametros: { equipamentos_dias_antes: 15 }
+  - condicao: "Dia com pagamentos recebidos e sem fechamento de caixa registado"
+    acao: "Avisar a Recepção para conferir e fechar o caixa do dia (Manual A-02)."
+    efeito: "alertar_humano"
+    # ASSUMIDO: olhar os últimos 7 dias (hoje não conta: o fechamento é no fim do dia).
+    parametros: { caixa_dias_retroativos: 7 }
