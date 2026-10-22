@@ -72,9 +72,9 @@ def test_so_o_aniversario_cita_desconto_e_nenhuma_mensagem_cita_valor(tmp_path):
     for _, t in canal.enviadas:
         assert "R$" not in t
         if "aniversário" not in t:
-            assert "desconto" not in t.lower()
+            assert "desconto" not in t.lower() and "abatimento" not in t.lower()
     aniv = next(t for _, t in canal.enviadas if "aniversário" in t)
-    assert aniv.startswith("Ana, feliz aniversário!") and "um presente para você: 15% de desconto no clareamento" in aniv and "mês do seu aniversário" in aniv
+    assert aniv.startswith("Ana, feliz aniversário!") and "um presente para você: 15% de abatimento no clareamento" in aniv and "mês do seu aniversário" in aniv
     assert "Prezado" not in aniv
     assert not any("%" in t.titulo or "R$" in t.titulo for t in m.tarefas.tarefas.values())
 
@@ -89,12 +89,12 @@ def test_oferta_desligada_usa_texto_simples(tmp_path):
     m = Maestro(led, pops=pops, estado=tmp_path / "est", notificador=Notificador(canal, led, pops["R-02"]))
     rodar(m, _backup_clinus(tmp_path), AGORA)
     aniv = next(t for _, t in canal.enviadas if "aniversário" in t)
-    assert "desconto" not in aniv.lower() and "%" not in aniv
+    assert "desconto" not in aniv.lower() and "abatimento" not in aniv.lower() and "%" not in aniv
 
 
-def test_textos_comerciais_sem_prezado(tmp_path):
-    for pid in ("CM-01", "CM-02"):
-        assert not any("Prezado" in t for t in carregar_todos()[pid].mensagens.values())
+def test_nenhuma_mensagem_de_nenhum_pop_tem_prezado(tmp_path):
+    for pid, pop in carregar_todos().items():
+        assert not any("Prezado" in t for t in pop.mensagens.values()), pid
 
 
 def test_nao_repete_no_mesmo_dia_e_ledger_sem_dados(tmp_path):

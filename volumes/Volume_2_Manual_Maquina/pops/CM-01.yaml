@@ -21,6 +21,6 @@ regras_de_decisao:
     # ASSUMIDO: antecedência de 2 dias. Confirmar com a clínica.
     parametros: { antecedencia_dias: 2 }
 mensagens:
-  parabens: "{primeiro_nome}, feliz aniversário! Toda a equipe da Hansen Odontologia deseja que o seu novo ano de vida seja cheio de saúde, alegria e muitos sorrisos. E temos um presente para você: {desconto_clareamento}% de desconto no clareamento durante todo o mês do seu aniversário. Um grande abraço!"
+  parabens: "{primeiro_nome}, feliz aniversário! Toda a equipe da Hansen Odontologia deseja que o seu novo ano de vida seja cheio de saúde, alegria e muitos sorrisos. E temos um presente para você: {desconto_clareamento}% de abatimento no clareamento durante todo o mês do seu aniversário. Um grande abraço!"
   parabens_simples: "{primeiro_nome}, feliz aniversário! Toda a equipe da Hansen Odontologia deseja que o seu novo ano de vida seja cheio de saúde, alegria e muitos sorrisos. Um grande abraço!"
   retorno_agendado: "Senhor(a) {nome}, lembramos do seu retorno em {data_hora}. Poderia confirmar a sua presença? Atenciosamente, Hansen Odontologia."

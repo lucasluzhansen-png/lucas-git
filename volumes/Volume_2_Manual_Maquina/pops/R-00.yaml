@@ -17,4 +17,4 @@ regras_de_decisao:
     acao: "Dentista faz o primeiro atendimento e encaminha. A IA não decide nada clínico."
     efeito: "atendimento_clinico_humano"
 mensagens:
-  fora_do_escopo: "Prezado(a) Senhor(a) {nome}, agradecemos o contato. Este procedimento não é realizado pela clínica; indicaremos profissionais parceiros. Nossa equipe retornará em breve."
+  fora_do_escopo: "Senhor(a) {nome}, agradecemos o contato. Este procedimento não é realizado pela clínica; indicaremos profissionais parceiros. Nossa equipe retornará em breve."
