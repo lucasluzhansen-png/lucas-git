@@ -160,7 +160,7 @@ if __name__ == "__main__":  # python -m hansen.hoje [backup.json|auto]
         painel = executar(backup, datetime.now(), Path("saida") / "hoje")
     except (ValueError, KeyError) as e:
         raise SystemExit(f"Não consegui ler o backup {backup.name}: {e}")
-    print(f"Backup usado: {backup.name}\\nPAINEL DO DIA: {painel.resolve()}")
+    print(f"Backup usado: {backup.name}\nPAINEL DO DIA: {painel.resolve()}")
     try:
         import webbrowser
         webbrowser.open(painel.resolve().as_uri())
