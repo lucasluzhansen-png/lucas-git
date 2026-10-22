@@ -10,7 +10,6 @@ from pathlib import Path
 from hansen.caminhos import pasta_saida
 from hansen.clinus import ClinusDados, carregar_backup, data_br
 from hansen.maestro import Maestro
-from hansen.sincronizar import Chaves
 
 MESES = ("", "janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro")
 
@@ -71,20 +70,17 @@ def resumo_anual(clinus: ClinusDados, ano: int, destino: Path) -> dict:
 def rodar(m: Maestro, clinus: ClinusDados, agora: datetime, saida: Path | None = None) -> list[ItemC]:
     arq = m.tarefas.arquivo.parent / "contabilidade.json" if m.tarefas.arquivo else None
     feitos: set[str] = set(json.loads(arq.read_text(encoding="utf-8"))) if arq and arq.exists() else set()
-    chaves = Chaves(m, "contabilidade")
     hoje = agora.date()
     saida = saida or pasta_saida() / "contabilidade"
     itens: list[ItemC] = []
     base = {"agora": agora.isoformat()}
 
     def sugerir(chave, acao, detalhe, ref):
-        chaves.marcar_ativa(chave)
-        if chave in feitos:
+        if chave in feitos:  # o Clinus não sabe se o envio ao contador foi feito: a tarefa só fecha quando a Recepção marca "Feito"
             return
-        d = m.processar("contabil", dados={**base, "ref_txt": ref, "acao": acao, "detalhe": detalhe})
+        m.processar("contabil", dados={**base, "ref_txt": ref, "acao": acao, "detalhe": detalhe})
         feitos.add(chave)
-        chaves.registrar(chave, d.tarefa_id)
-        itens.append(ItemC(acao, f"{detalhe} (tarefa #{d.tarefa_id})"))
+        itens.append(ItemC(acao, detalhe))
 
     # 1) Fechamento do mês anterior (a partir do dia configurado)
     if hoje.day >= _p(m, "dia_cobranca"):
@@ -102,8 +98,6 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime, saida: Path | None =
         if hoje.month == _p(m, "ir_mes_prazo"):
             sugerir(f"ir|{ano_ir}|prazo", "prazo_ir", f"IR {ano_ir}: prazo perto, confirmar com o contador se foi entregue", f"IR {ano_ir}")
 
-    feitos &= chaves.ativas
-    chaves.fechar_resolvidas()
     if arq:
         arq.write_text(json.dumps(sorted(feitos)), encoding="utf-8")
     return itens
