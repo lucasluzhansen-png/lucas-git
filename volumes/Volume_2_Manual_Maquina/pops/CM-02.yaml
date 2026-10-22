@@ -10,6 +10,11 @@ regras_de_decisao:
     efeito: "retomar_orcamento"
     # ASSUMIDO: 7 dias. Confirmar com a clínica.
     parametros: { dias_orcamento: 7 }
+  # Mesma definição do Clinus ("Manutenção / revisão vencida"): tratamento concluído (etapa 10) há 180 dias ou mais.
+  - condicao: "Tratamento concluído (etapa 10) sem contato há mais dias que o limite"
+    acao: "Sugerir contato para revisão/manutenção pela equipe, sem promoções."
+    efeito: "revisar_manutencao"
+    parametros: { dias_manutencao: 180 }
   - condicao: "Paciente sem contato há mais dias que o limite e sem consulta futura"
     acao: "Sugerir contato de relacionamento pela equipe, sem promoções."
     efeito: "reativar_paciente"

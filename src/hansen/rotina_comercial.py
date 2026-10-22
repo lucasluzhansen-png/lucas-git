@@ -47,6 +47,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
     antecedencia = _params(m, "CM-01", "enviar_lembrete_retorno")["antecedencia_dias"]
     dias_orc = _params(m, "CM-02", "retomar_orcamento")["dias_orcamento"]
     pr = _params(m, "CM-02", "reativar_paciente")
+    dias_man = _params(m, "CM-02", "revisar_manutencao")["dias_manutencao"]
     itens: list[ItemC] = []
     base = {"agora": agora.isoformat()}
 
@@ -99,10 +100,17 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
     for p in pacs:
         ult = _dt(p["ultima_acao"])
         dias = (agora - ult).days if ult else 0
-        if p["decisao"] == "pensar" and dias >= dias_orc:
-            candidatos.append((0, -dias, "orcamento_aberto", p, dias))
-        elif p["decisao"] != "pensar" and ult and dias >= pr["dias_parado"] and p["id"] not in futuros:
-            candidatos.append((1, -dias, "paciente_parado", p, dias))
+        concluido = (p["etapa"] or 0) >= 10 and not p["zona"]
+        if p["orc_aberto"]:
+            if dias >= dias_orc:
+                candidatos.append((0, -dias, "orcamento_aberto", p, dias))
+        elif p["historico"]:
+            continue  # base importada sem ação humana: não é alvo (mesma regra do Clinus)
+        elif concluido:
+            if p["etapa"] == 10 and ult and dias >= dias_man:
+                candidatos.append((1, -dias, "manutencao_vencida", p, dias))
+        elif ult and dias >= pr["dias_parado"] and p["zona"] != "perdidos" and p["id"] not in futuros:
+            candidatos.append((2, -dias, "paciente_parado", p, dias))
     for _, _, tipo, p, dias in sorted(candidatos, key=lambda c: (c[0], c[1])):
         if recente(p["id"]):
             continue
@@ -120,7 +128,7 @@ def rodar(m: Maestro, clinus: ClinusDados, agora: datetime) -> list[ItemC]:
 
 
 def formatar(itens: list[ItemC]) -> str:
-    rot = {"aniversario": "Aniversário", "retorno": "Retorno", "orcamento_aberto": "Orçamento aberto", "paciente_parado": "Paciente parado"}
+    rot = {"aniversario": "Aniversário", "retorno": "Retorno", "orcamento_aberto": "Orçamento aberto", "paciente_parado": "Paciente parado", "manutencao_vencida": "Manutenção vencida"}
     linhas = [f"{'Tipo':<18} {'Paciente':<28} O que aconteceu"]
     linhas += [f"{rot[i.tipo]:<18} {i.nome[:27]:<28} {i.resultado}" for i in itens]
     return "\n".join(linhas) if itens else "Nada a fazer hoje no comercial."

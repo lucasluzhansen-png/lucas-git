@@ -56,6 +56,25 @@ class ClinusDados:
         return self.consultas_entre(agora, agora + timedelta(hours=horas))
 
 
+def _historico(p: dict) -> bool:
+    """Base importada sem nenhuma ação humana (mesma regra do Clinus, `_ehHistorico`): não é lead nem paciente a reativar."""
+    if not p.get("origemImport"):
+        return False
+    if p.get("orcamento") or p.get("zona") or (p.get("etapa") or 2) > 2:
+        return False
+    if p.get("proxSessao") and p.get("proxSessao") != "—":
+        return False
+    return all(isinstance(x, dict) and isinstance(x.get("t"), str)
+               and (x["t"].startswith("📥") or x["t"].startswith("🔁 Entrou na fila de reativação")) for x in (p.get("log") or []))
+
+
+def _orc_aberto(p: dict) -> bool:
+    """Orçamento em aberto, como no relatório do Clinus: decisão 'vai pensar', zona 'Orç. pendente', etapa 7 ou orçamento novo parado."""
+    orc = p.get("orcamento") or {}
+    em_aberto = bool(orc) and not orc.get("aprovadoEm") and bool(orc.get("itens"))
+    return p.get("decisao") == "pensar" or p.get("zona") == "orcpendente" or p.get("etapa") == 7 or (em_aberto and bool(p.get("orcamentosFechados")))
+
+
 def carregar_backup(caminho: Path) -> ClinusDados:
     bruto = json.loads(Path(caminho).read_text(encoding="utf-8"))
     if bruto.get("versao") != "hrpg_v1":
@@ -66,6 +85,8 @@ def carregar_backup(caminho: Path) -> ClinusDados:
             "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
             "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
+            "etapa": p.get("etapa") if isinstance(p.get("etapa"), int) else None, "zona": p.get("zona") or "",
+            "orc_aberto": _orc_aberto(p), "historico": _historico(p),
             "ativo": not (p.get("deleted") or p.get("arquivado") or p.get("ativo") is False),
             # opt-in para mensagens comerciais: só vale se o Clinus tiver registado explicitamente
             "consentimento": bool(p.get("consentimentoComercial") or p.get("consentimentoMensagens")),
@@ -141,6 +162,8 @@ def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
         f"Pacientes ativos: {len(ativos)} | decisão do orçamento: {dict(Counter(p['decisao'] or '(vazio)' for p in ativos))}",
         f"Última ação: sem data em {sem_data}; há 7+ dias: {sum(1 for x in dias if x >= 7)}; há 90+ dias: {sum(1 for x in dias if x >= 90)}",
         f"Nascimento preenchido: {nasc_ok} | aniversários nos próximos 30 dias: {aniv_30}",
+        f"Orçamento em aberto (definição do Clinus): {sum(1 for p in ativos if p['orc_aberto'])} | base histórica importada: {sum(1 for p in ativos if p['historico'])}",
+        f"Tratamento concluído (etapa 10): {sum(1 for p in ativos if p['etapa'] == 10 and not p['zona'])} | etapas: {dict(sorted(Counter(p['etapa'] for p in ativos).items(), key=lambda kv: (kv[0] is None, kv[0] or 0)))}",
         f"Consentimento comercial registado: {sum(1 for p in ativos if p['consentimento'])}",
         f"Retornos: {len(d.retornos)} | campos: {sorted(campos_ret)}",
     ]

@@ -127,9 +127,10 @@ class Maestro:
             "atendimento_clinico_humano": "Paciente atual: dentista faz o 1º atendimento e encaminha",
             "retomar_orcamento": "Retomar contato: orçamento em aberto ('vai pensar')",
             "reativar_paciente": "Reativar paciente parado: contato de relacionamento",
+            "revisar_manutencao": "Contatar para revisão/manutenção vencida",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
             titulo += f" [{ref}]"
         quem = self.pops["A-06"].responsaveis
-        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial"}.get(acao, "aprovacao_ia")
+        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial", "revisar_manutencao": "contato_comercial"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

@@ -6,7 +6,7 @@ from hansen.yaml_parser import POP
 
 class Comercial:
     nome = "comercial"
-    tipos = {"aniversario", "retorno", "orcamento_aberto", "paciente_parado"}
+    tipos = {"aniversario", "retorno", "orcamento_aberto", "paciente_parado", "manutencao_vencida"}
 
     def __init__(self, pops: dict[str, POP]):
         self.responsavel = pops["A-06"].responsaveis["contato_comercial"]
@@ -25,6 +25,8 @@ class Comercial:
                             mensagem={"pop": "CM-01", "template": "retorno_agendado"})
         if tipo == "orcamento_aberto":
             return Proposta("CM-02", "retomar_orcamento", f"Orçamento em aberto há {d.get('dias', '?')} dias. Retomar sem citar valores ou descontos.")
+        if tipo == "manutencao_vencida":
+            return Proposta("CM-02", "revisar_manutencao", f"Tratamento concluído há {d.get('dias', '?')} dias sem contato. Sugerir revisão/manutenção, sem promoções.")
         if tipo == "paciente_parado":
             return Proposta("CM-02", "reativar_paciente", f"Sem contato há {d.get('dias', '?')} dias. Contato de relacionamento, sem promoções.")
         return None

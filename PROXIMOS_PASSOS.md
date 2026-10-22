@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (57 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (62 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -45,6 +45,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - A IA NUNCA cita valores, descontos ou condições de pagamento.
 - Valores ASSUMIDOS (CM-01/CM-02.yaml): orçamento após 7 dias, parado após 90 dias, 1 contato a cada 30 dias, máx. 5 sugestões/dia, retorno avisado 2 dias antes.
 - Mensagem de aniversário tende a ser categoria "marketing" na WhatsApp Business API (mais cara que utilidade); conferir com o provedor.
+- "Orçamento em aberto" usa a MESMA definição do relatório do Clinus: decisão `pensar` OU zona `orcpendente` OU etapa 7 OU orçamento novo sem aprovação. "Manutenção vencida" = etapa 10 há 180+ dias (também do Clinus). "Base histórica importada" (sem ação humana) é ignorada, como no Clinus. Pacientes na zona `perdidos` não são reativados. Teste com backups reais (21/10 e 09/10): quase nenhum paciente tem `decisao`, nascimento ou retornos preenchidos, então a rotina achou pouco a fazer.
 - Formato do store `clinus_retornos_v1` deduzido do código (campos `pacId`, `status`, `devido`/`data`); validar com backup real.
 
 ## Premissas ainda NÃO confirmadas com a clínica

@@ -31,6 +31,12 @@ def _setup(tmp_path):
     return m, carregar_backup(f), canal
 
 
+def _extra(c, **campos):
+    base = {"nome": "X", "tel": "71911110000", "nascimento": "", "decisao": "", "ultima_acao": "2026-03-01T00:00:00Z",
+            "ativo": True, "consentimento": False, "etapa": 3, "zona": "", "orc_aberto": False, "historico": False}
+    c.por_id[campos["id"]] = {**base, **campos}
+
+
 def test_aniversario_so_envia_com_consentimento(tmp_path):
     m, c, canal = _setup(tmp_path)
     rodar(m, c, AGORA)
@@ -76,8 +82,7 @@ def test_nao_repete_no_mesmo_dia_e_ledger_sem_dados(tmp_path):
 def test_limite_diario_de_sugestoes(tmp_path):
     m, c, _ = _setup(tmp_path)
     for i in range(10):
-        c.por_id[f"x{i}"] = {"id": f"x{i}", "nome": f"N{i}", "tel": "1", "nascimento": "", "decisao": "pensar",
-                             "ultima_acao": "2026-01-01T00:00:00Z", "ativo": True, "consentimento": False}
+        _extra(c, id=f"x{i}", decisao="pensar", orc_aberto=True, ultima_acao="2026-01-01T00:00:00Z")
     itens = rodar(m, c, AGORA)
     assert sum(1 for i in itens if "tarefa #" in i.resultado and i.tipo in ("orcamento_aberto", "paciente_parado")) == 5
     assert any("limite diário" in i.resultado for i in itens)
@@ -89,3 +94,37 @@ def test_fora_do_horario_nao_envia_e_tenta_depois(tmp_path):
     assert canal.enviadas == []
     rodar(m, c, AGORA)  # na janela comercial do mesmo dia civil
     assert any("feliz aniversário" in t for _, t in canal.enviadas)
+
+
+def test_orcamento_em_aberto_pelas_regras_do_clinus(tmp_path):
+    m, c, _ = _setup(tmp_path)
+    c.por_id.clear()
+    _extra(c, id="z", orc_aberto=True)  # zona 'orcpendente'/etapa 7 já resolvidas em orc_aberto
+    itens = rodar(m, c, AGORA)
+    assert [i.tipo for i in itens] == ["orcamento_aberto"]
+
+
+def test_base_historica_importada_nao_e_alvo(tmp_path):
+    m, c, _ = _setup(tmp_path)
+    c.por_id.clear()
+    for i in range(50):
+        _extra(c, id=f"h{i}", historico=True, ultima_acao="2024-01-01T00:00:00Z")
+    assert rodar(m, c, AGORA) == []
+
+
+def test_manutencao_vencida_so_etapa_10_apos_180_dias(tmp_path):
+    m, c, _ = _setup(tmp_path)
+    c.por_id.clear()
+    _extra(c, id="a", etapa=10, ultima_acao="2025-08-01T00:00:00Z")  # >180 dias
+    _extra(c, id="b", etapa=10, ultima_acao="2026-02-01T00:00:00Z")  # recente
+    _extra(c, id="c", etapa=11, ultima_acao="2024-01-01T00:00:00Z")  # concluído e fora (não é parado)
+    itens = rodar(m, c, AGORA)
+    assert [(i.tipo) for i in itens] == ["manutencao_vencida"]
+    assert any("manutenção" in t.titulo for t in m.tarefas.tarefas.values())
+
+
+def test_perdidos_nao_sao_reativados(tmp_path):
+    m, c, _ = _setup(tmp_path)
+    c.por_id.clear()
+    _extra(c, id="p", zona="perdidos", ultima_acao="2025-01-01T00:00:00Z")
+    assert rodar(m, c, AGORA) == []
