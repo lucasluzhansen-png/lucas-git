@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (62 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (66 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -19,6 +19,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `cerebro.py`: LLM só classifica o tipo de pedido (guardrails, urgência vai a humano). Testado só com LLM falso; falta testar com `ANTHROPIC_API_KEY`.
 - `maestro.py`: roteia por agentes, respeita nível de autonomia, pausa do RT, cria tarefas.
 - `agentes/recepcao.py` (R-00, R-02), `agentes/rotina.py` (A-01, A-06) e `agentes/comercial.py` (CM-01, CM-02).
+- `cadastros.py`: relatório de qualidade dos cadastros (`python -m hansen.cadastros "<backup.json>"`): terminal só com contagens; planilha com nomes em `saida/cadastros/` (fora do Git).
 - `rotina_comercial.py`: rotina diária do Comercial (`python -m hansen.rotina_comercial "<backup.json>" agora`).
 - `tarefas.py`: escalada de vermelha em 60 min, fecho só com evidência, veto só do RT, persistência em JSON.
 - `canal.py`: WhatsApp SIMULADO (tom formal, seg-sex 8h-18h). `agendador.py`: `tick()` com silêncio de madrugada.
