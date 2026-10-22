@@ -83,7 +83,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Lê `lab_os` do Clinus (campos: numero, lab, pac, etapa moldagem|enviado|producao|retornou|prova|ajuste|instalado|entregue|cancelada|problema, entrega/prazo, marcos {enviado, retornou, instalado}, problema, arquivada, antiRefacaoEm). `python -m hansen.rotina_laboratorio "<backup.json>" agora`; também roda dentro do painel do dia e do Maestro.
 - Sugere (Recepção, só sugere): OS atrasada (cobrar o lab), prazo vencendo (2 dias), acima do prazo padrão (21 dias, do documento original), enviada sem prazo, peça retornou sem conferência anti-refação (1 dia), OS com problema. Tarefas fecham sozinhas quando a OS avança.
 - A IA NUNCA avalia a peça (cor, adaptação, qualidade): só prazo e etapa. Um teste garante que nenhum texto fala disso.
-- FALTA: cruzar com a agenda ("prova da barra + dentes na mesma sessão após o protocolo"; "peça retornou e não há prova agendada"); testar com backup real (o backup de 21/10 não tinha OS); confirmar o responsável (assumi Recepção).
+- FALTA: cruzar com a agenda ("prova da barra + dentes na mesma sessão após o protocolo"; "peça retornou e não há prova agendada"); testar com backup real (o backup de 21/10 não tinha OS); responsável (Recepção) e valores (2 dias / 1 dia) CONFIRMADOS pelo RT em 22/10/2026. O RT vai verificar com OS reais do Clinus.
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).

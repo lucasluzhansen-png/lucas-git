@@ -16,7 +16,7 @@ MUDOU = [
     "A-06: aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento para a Recepção.",
     "NOVOS: CM-01 (lembretes de relacionamento) e CM-02 (retomada de orçamentos, reativação e manutenção), aprovados em conteúdo pelo Dr. Lucas em 22/10/2026.",
     "NOVO: FN-01 (Financeiro: lembrete de parcela a vencer e cobrança de atraso). A IA só sugere; a Recepção revisa e envia. Atraso após 3 dias (decisão do RT). Ainda sem aprovação.",
-    "NOVO: LB-01 (Laboratório: OS atrasada, prazo vencendo, acima do prazo padrão de 21 dias, sem prazo registado, peça retornou sem conferência e OS com problema). A IA só acompanha PRAZOS e ETAPAS e cobra a equipe; NUNCA avalia a peça. Responsável: Recepção (assumido). Lê as OS do Clinus. Ainda sem aprovação.",
+    "NOVO: LB-01 (Laboratório: OS atrasada, prazo vencendo, acima do prazo padrão de 21 dias, sem prazo registado, peça retornou sem conferência e OS com problema). A IA só acompanha PRAZOS e ETAPAS e cobra a equipe; NUNCA avalia a peça. Responsável: Recepção (confirmado pelo Dr. Lucas). Lê as OS do Clinus. Ainda sem aprovação.",
     "NOVO: MA-01 (Cobrança do Maestro: resumo às 8h30 e fechamento às 17h30, insiste a cada 2 h nas urgentes com tom crescente, avisa o Dr. Lucas do que está parado com a Recepção há 2+ dias e avisa quando o backup do Clinus está velho). Notificação do Windows, seg-sex 8h-18h. O Maestro cobra a EQUIPE sozinho; enviar mensagem a paciente e decidir continuam humanos. Tarefas agora também se fecham sozinhas quando o Clinus mostra que o problema acabou.",
     "NOVO: FN-03 (Convênio: guia não criada ou não enviada, autorização pendente, repasse atrasado, glosa sem recurso e fechamento mensal por operadora). Lê o módulo de guias do Clinus. A IA só sugere; responsável: Recepção. Ainda sem aprovação.",
     "NOVO: FN-02 (Financeiro da clínica: contas a pagar, compras, preventiva de equipamentos e fechamento de caixa). A IA só sugere; responsável: Recepção (compras: Dr. Lucas decide). Ainda sem aprovação.",
@@ -30,7 +30,7 @@ PENDENTE = [
     "FN-02: confirmar valores assumidos (conta avisada 2 dias antes; preventiva 15 dias antes; caixa olha os últimos 7 dias) e se as compras pendentes vão mesmo para o Dr. Lucas.",
     "FN-03: confirmar valores assumidos (criar guia 3 dias após aprovar; enviar guia 3 dias após criar; cobrar autorização 7 dias após enviar; fechamento do mês a partir do dia 5) e o que significa “fechamento de caixa de convênio” para a clínica.",
     "Ainda por desenhar: chamados de equipamento parados e diferença de caixa sem explicação (campos do Clinus a conferir).",
-    "LB-01: confirmar valores assumidos (aviso 2 dias antes do prazo; conferência cobrada 1 dia após a chegada; prazo padrão 21 dias, do documento original) e quem cuida do laboratório (Recepção?). Falta cruzar com a agenda: “prova da barra + dentes na mesma sessão após o protocolo” e “peça retornou sem prova agendada”.",
+    "LB-01: valores e responsável (Recepção) confirmados pelo Dr. Lucas em 22/10/2026; falta testar com OS reais do Clinus. Falta cruzar com a agenda: “prova da barra + dentes na mesma sessão após o protocolo” e “peça retornou sem prova agendada”.",
     "MA-01: confirmar valores assumidos (insistência a cada 2 h; escalar após 2 dias; backup antigo após 24 h; resumo 8h30; fechamento 17h30) e testar a notificação do Windows (testar_aviso.bat), que não pôde ser testada em Windows real.",
     "Lista de profissionais parceiros (a ser entregue pelo Dr. Lucas).",
 ]
