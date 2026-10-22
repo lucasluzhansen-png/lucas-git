@@ -43,9 +43,17 @@ def _linha(nome: str, titulo: str, detalhe: str = "") -> str:
     return f'<tr><td><b>{titulo}</b>{d}</td><td class="r">{_radios(nome)}</td><td><input class="nota" placeholder="anotação"></td></tr>'
 
 
+class _Seguro(dict):
+    def __missing__(self, chave):  # variável sem exemplo: mostra {nome} em vez de quebrar a folha
+        return "{" + chave + "}"
+
+
+EXEMPLOS_MAESTRO = {"saudacao": "Bom dia", "n": 3, "u": 1, "categorias": "2× conta vencida, compra crítica", "dias": 2, "horas": 30}
+
+
 def _exemplo(pop: POP, modelo: str) -> str:
-    v = variaveis(pop, "Maria Souza", data_hora="11/03", titulo="Falha crítica")
-    return pop.mensagens[modelo].format(**v)
+    v = variaveis(pop, "Maria Souza", data_hora="11/03", titulo="Falha crítica", **EXEMPLOS_MAESTRO)
+    return pop.mensagens[modelo].format_map(_Seguro(v))
 
 
 def _secao(pop: POP) -> str:
