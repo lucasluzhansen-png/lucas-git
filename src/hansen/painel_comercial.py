@@ -23,6 +23,9 @@ TIPOS = {
 TIPOS_FINANCEIRO = {
     "Cobrar parcela em atraso": ("cobrar_atraso", "FN-01", "Parcela em atraso"),
     "Lembrar parcela a vencer": ("lembrar_vencimento", "FN-01", "Parcela a vencer"),
+    "Jornada: plano aprovado": ("iniciar_tratamento", "JN-01", "Plano aprovado: agendar início"),
+    "Jornada: tratamento parado": ("tratamento_parado", "JN-01", "Tratamento parado"),
+    "Jornada: alta concluída": ("retorno_alta", "JN-01", "Alta: agendar retorno"),
 }
 
 

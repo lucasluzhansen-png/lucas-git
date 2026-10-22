@@ -184,7 +184,7 @@ def carregar_backup(caminho: Path) -> ClinusDados:
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
             "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
             "aprovado_em": str((p.get("orcamento") or {}).get("aprovadoEm") or ""),
-            "encerrado": bool((p.get("encerramento") or {}).get("emISO")),
+            "encerrado": bool((p.get("encerramento") or {}).get("emISO")), "encerrado_em": str((p.get("encerramento") or {}).get("emISO") or ""),
             "conv_valor": sum(_valor(it.get("valor")) * (float(it.get("qtd")) if str(it.get("qtd") or "").replace(".", "", 1).isdigit() else 1.0)
                               for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)),
             "conv_operadora": op_nome(next((it.get("convenio") for it in ((p.get("orcamento") or {}).get("convItens") or {}).values() if isinstance(it, dict)), None) or p.get("convQual")),

@@ -19,6 +19,7 @@ responsaveis:
   financeiro: "recepcao"  # decisão do RT
   laboratorio: "recepcao"  # confirmado pelo RT em 22/10/2026
   contabilidade: "recepcao"  # decisão do RT em 22/10/2026
+  jornada: "recepcao"  # decisão do RT em 22/10/2026
   decisao_compras: "lucas"  # ASSUMIDO: o Clinus diz "aguardando o dono decidir"
   contato_comercial: "lucas"  # decisão do RT
   agendar_paciente: "recepcao"  # decisão do RT: recepção agenda sozinha
