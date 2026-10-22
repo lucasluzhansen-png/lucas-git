@@ -174,11 +174,19 @@ def _orc_aberto(p: dict) -> bool:
 
 def carregar_backup(caminho: Path) -> ClinusDados:
     bruto = json.loads(Path(caminho).read_text(encoding="utf-8"))
-    if bruto.get("versao") != "hrpg_v1":
+    if not isinstance(bruto, dict) or bruto.get("versao") != "hrpg_v1":
         raise ValueError("Arquivo não parece um backup do Clinus (versao esperada: hrpg_v1).")
-    d = ClinusDados(exportado_em=bruto.get("exportadoEm", ""))
+    if not isinstance(bruto.get("stores"), dict):
+        bruto["stores"] = {}
+    d = ClinusDados(exportado_em=str(bruto.get("exportadoEm", "")))
     d.stores_brutos = dict(bruto.get("stores") or {})
     for p in bruto.get("pacientes") or []:
+        if not isinstance(p, dict):
+            continue  # registro mal formado: ignora, nunca adivinha
+        orc = p.get("orcamento") if isinstance(p.get("orcamento"), dict) else {}
+        if "pagamentos" in orc:
+            orc = {**orc, "pagamentos": [x for x in orc["pagamentos"] if isinstance(x, dict)] if isinstance(orc["pagamentos"], list) else []}
+        p = {**p, "orcamento": orc, "encerramento": p.get("encerramento") if isinstance(p.get("encerramento"), dict) else {}}
         enxuto = {
             "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
@@ -220,8 +228,9 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     d.lab_os = [o for o in lista("lab_os") if isinstance(o, dict) and (o.get("numero") or o.get("id")) and not o.get("arquivada")]
     d.guias = [g for g in lista("clinus_guias") if isinstance(g, dict) and g.get("id")]
     d.caixa = [c for c in lista("clinus_caixa") if isinstance(c, dict) and _ISO.match(str(c.get("data") or ""))]
-    for p in bruto.get("pacientes") or []:  # recebimentos por dia (estornados e transferidos não contam), como o caixa do Clinus
-        for pg in ((p.get("orcamento") or {}).get("pagamentos") or []):
+    for p in (x for x in bruto.get("pacientes") or [] if isinstance(x, dict)):  # recebimentos por dia (estornados e transferidos não contam), como o caixa do Clinus
+        orc_p = p.get("orcamento") if isinstance(p.get("orcamento"), dict) else {}
+        for pg in (orc_p.get("pagamentos") if isinstance(orc_p.get("pagamentos"), list) else []):
             if not isinstance(pg, dict) or pg.get("estornadoEm") or pg.get("transferido"):
                 continue
             dia = data_br(pg.get("d")) or data_br(pg.get("iso"))
