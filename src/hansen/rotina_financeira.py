@@ -231,7 +231,7 @@ def formatar_clinica(itens: list[ItemF]) -> str:
 if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AAAA-MM-DDTHH:MM|agora]
     from hansen.canal import CanalSimulado, Notificador
     from hansen.ledger import LedgerManager
-    from hansen.painel_comercial import AVISO_FINANCEIRO, TIPOS_FINANCEIRO, cartoes, gerar
+    from hansen.painel_comercial import AVISO_FINANCEIRO, TIPOS_FINANCEIRO, cartoes, cartoes_internos, gerar
     from hansen.yaml_parser import carregar_todos
 
     if len(sys.argv) < 2:
@@ -250,8 +250,8 @@ if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AA
     print(formatar(rodar(maestro, dados, agora)))
     print("\n--- Rotina da clínica (contas, compras, equipamentos, caixa) ---")
     print(formatar_clinica(rodar_clinica(maestro, dados, agora)))
-    painel = gerar(maestro, dados, base_dir / "painel_financeiro.html", agora, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO)
-    print(f"\nPAINEL FINANCEIRO ({len(cartoes(maestro, dados, 'financeiro', TIPOS_FINANCEIRO))} sugestões abertas): {painel.resolve()}")
+    painel = gerar(maestro, dados, base_dir / "painel_financeiro.html", agora, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO, internos=True)
+    print(f"\nPAINEL FINANCEIRO ({len(cartoes(maestro, dados, 'financeiro', TIPOS_FINANCEIRO)) + len(cartoes_internos(maestro))} itens abertos): {painel.resolve()}")
     print(f"Ledger íntegro: {led.verificar()}")
     try:
         import webbrowser

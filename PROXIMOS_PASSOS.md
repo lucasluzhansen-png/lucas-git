@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (93 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (94 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -20,7 +20,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `maestro.py`: roteia por agentes, respeita nível de autonomia, pausa do RT, cria tarefas.
 - `agentes/recepcao.py` (R-00, R-02), `agentes/rotina.py` (A-01, A-06) e `agentes/comercial.py` (CM-01, CM-02).
 - `folha_aprovacao.py`: gera `docs/folha_aprovacao_pops.html` direto dos YAMLs (`python -m hansen.folha_aprovacao`); refazer sempre que um YAML mudar.
-- `agentes/financeiro.py` (FN-01) + `rotina_financeira.py`: parcelas do Clinus (mesma lógica de quitação em ordem do app). `python -m hansen.rotina_financeira "<backup.json>" agora` gera `saida/financeiro/painel_financeiro.html` (cartões para a Recepção com texto cordial e link wa.me; só sugere). Tarefas: `python -m hansen.tarefas_cli saida\\financeiro listar|fechar`.
+- `agentes/financeiro.py` (FN-01) + `rotina_financeira.py`: parcelas do Clinus (mesma lógica de quitação em ordem do app). `python -m hansen.rotina_financeira "<backup.json>" agora` gera `saida/financeiro/painel_financeiro.html` (cartões para a Recepção com texto cordial e link wa.me; só sugere). O painel também lista as tarefas internas (contas, compras, equipamentos, caixa, convênio). Tarefas: `python -m hansen.tarefas_cli saida\\financeiro listar|fechar`. Dica PowerShell para pegar o backup mais recente: `$b = Get-ChildItem "$HOME\\Downloads\\hansen-rpg-backup-*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1`.
 - `cadastros.py`: relatório de qualidade dos cadastros (`python -m hansen.cadastros "<backup.json>"`): terminal só com contagens; planilha com nomes em `saida/cadastros/` (fora do Git).
 - `rotina_comercial.py`: rotina diária do Comercial (`python -m hansen.rotina_comercial "<backup.json>" agora`); ao final gera e abre `saida/comercial/painel_comercial.html` (`painel_comercial.py`): cartões para o Dr. Lucas com nome, texto formal sugerido (CM-02.yaml, sem valores) e link wa.me (quem envia é o humano pelo app do WhatsApp Business). O arquivo tem nomes/telefones: fica em saida/ (fora do Git).
 - `tarefas_cli.py`: `python -m hansen.tarefas_cli saida\\comercial listar` e `... fechar N "evidência"` (fecha tarefa; o cartão some do painel).
@@ -65,6 +65,9 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).
 - Lista de palavras de risco clínico (cerebro.py) e de procedimentos recusados (R-00.yaml): revisão clínica.
 - Número exato da RDC e regras do CFO: conferir em fonte oficial.
+
+## Testado com backup real (21/10, 2º teste)
+Financeiro achou preventiva vencida do ar condicionado (prevista 15/10) e o comercial achou 1 orçamento em aberto há 13 dias. Guias de convênio ainda NÃO testadas com dados reais (o backup usado era anterior ao Clinus atualizado: 0 guias).
 
 ## Testado com backup real (21/10)
 Leitor entendeu o formato real do Clinus. Backup tinha 3 pacientes (só 1 com telefone) e 4 consultas; o sistema marcou corretamente "sem telefone: ligar manualmente". Qualidade dos telefones no Clinus é o ponto fraco.

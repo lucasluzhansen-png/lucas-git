@@ -96,3 +96,13 @@ def test_backup_sem_esses_cadastros_nao_quebra(tmp_path):
     led = LedgerManager(tmp_path / "l")
     m = Maestro(led, estado=tmp_path / "e", notificador=Notificador(CanalSimulado(), led, carregar_todos()["R-02"]))
     assert rodar_clinica(m, carregar_backup(f), AGORA) == []
+
+
+def test_painel_financeiro_mostra_tarefas_internas(tmp_path):
+    from hansen.painel_comercial import AVISO_FINANCEIRO, TIPOS_FINANCEIRO, cartoes_internos, gerar
+    m, c = _setup(tmp_path)
+    rodar_clinica(m, c, AGORA)
+    internos = cartoes_internos(m)
+    assert {x["rotulo"] for x in internos} == {"Conta a pagar", "Compra", "Equipamento", "Caixa"}
+    html = gerar(m, c, tmp_path / "p.html", AGORA, "financeiro", TIPOS_FINANCEIRO, "Painel financeiro", AVISO_FINANCEIRO, internos=True).read_text(encoding="utf-8")
+    assert "Autoclave" in html and "Aluguel" in html and "URGENTE" in html and "Nenhuma sugestão aberta" not in html

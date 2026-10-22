@@ -34,6 +34,25 @@ AVISO_FINANCEIRO = ("Sugestões da IA para a Recepção. <b>Revise o texto antes
                     "Este arquivo tem nomes e telefones: uso interno, não compartilhe.")
 
 
+# tarefas internas da clínica (sem paciente): aparecem como cartões simples, sem botão de WhatsApp
+INTERNOS = {
+    "Conta a pagar": "Conta a pagar", "Compra": "Compra", "Agendar manutenção preventiva": "Equipamento",
+    "Fechar o caixa": "Caixa", "Convênio": "Convênio",
+}
+
+
+def cartoes_internos(m: Maestro) -> list[dict]:
+    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras")}
+    saida = []
+    for t in m.tarefas.tarefas.values():
+        rotulo = next((r for k, r in INTERNOS.items() if t.titulo.startswith(k)), None)
+        if t.estado not in ("aberta", "escalada") or t.responsavel not in donos or not rotulo:
+            continue
+        titulo, _, detalhe = t.titulo.partition("]. ")
+        saida.append({"tarefa": t.id, "rotulo": rotulo, "titulo": titulo.split(" [")[0], "detalhe": detalhe or "", "quem": t.responsavel, "urgente": t.prioridade == "amarela"})
+    return saida
+
+
 def cartoes(m: Maestro, clinus: ClinusDados, quem: str = "contato_comercial", tipos: dict | None = None) -> list[dict]:
     dono = m.pops["A-06"].responsaveis[quem]
     tipos = tipos or TIPOS
@@ -62,8 +81,12 @@ def cartoes(m: Maestro, clinus: ClinusDados, quem: str = "contato_comercial", ti
 
 def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None = None,
           quem: str = "contato_comercial", tipos: dict | None = None, titulo: str = "Painel comercial",
-          aviso: str = AVISO_COMERCIAL) -> Path:
+          aviso: str = AVISO_COMERCIAL, internos: bool = False) -> Path:
     cs = cartoes(m, clinus, quem, tipos)
+    ints = cartoes_internos(m) if internos else []
+    blocos_int = "".join(
+        f'<div class="c{" u" if c["urgente"] else ""}"><div class="t">{escape(c["rotulo"])}{" · URGENTE" if c["urgente"] else ""} · para {escape(c["quem"])}</div>'
+        f'<div class="n">{escape(c["titulo"])} <span class="id">tarefa #{c["tarefa"]}</span></div><div class="m">{escape(c["detalhe"])}</div></div>' for c in ints)
     agora = agora or datetime.now()
     blocos = "".join(
         f'<div class="c"><div class="t">{escape(c["rotulo"])}' + (f" · {c['dias']} dias" if c["dias"] else "") + f'</div>'
@@ -71,7 +94,7 @@ def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None
         f'<div class="m">{escape(c["texto"])}</div>'
         + (f'<a class="b" href="{escape(c["link"])}" target="_blank" rel="noopener">Abrir no WhatsApp</a>' if c["link"]
            else '<div class="sem">Sem telefone válido: ligar ou corrigir o cadastro no Clinus.</div>')
-        + "</div>" for c in cs) or '<p>Nenhuma sugestão aberta. 🎉</p>'
+        + "</div>" for c in cs) or ("" if ints else '<p>Nenhuma sugestão aberta. 🎉</p>')
     html = f"""<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{escape(titulo)}</title>
 <style>
@@ -82,11 +105,11 @@ h1{{font-size:1.3rem}} .aviso{{font-size:.85rem;opacity:.8;border-left:4px solid
 .c{{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin:12px 0}}
 .t{{font-size:.8rem;text-transform:uppercase;opacity:.7}} .n{{font-weight:600;font-size:1.05rem;margin:2px 0 6px}} .id{{font-weight:400;font-size:.8rem;opacity:.6}}
 .m{{font-size:.92rem;background:rgba(127,127,127,.12);border-radius:8px;padding:8px 10px;margin-bottom:8px}}
-.b{{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px}} .sem{{color:#c62828;font-size:.9rem}}
+.b{{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px}} .sem{{color:#c62828;font-size:.9rem}} .u{{border-left:5px solid #e65100}}
 </style>
 <h1>{escape(titulo)} · {agora:%d/%m/%Y %H:%M}</h1>
 <div class="aviso">{aviso}</div>
-{blocos}
+{blocos_int}{blocos}
 </html>"""
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(html, encoding="utf-8")
