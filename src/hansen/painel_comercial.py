@@ -42,7 +42,7 @@ INTERNOS = {
 
 
 def cartoes_internos(m: Maestro) -> list[dict]:
-    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras", "laboratorio")}
+    donos = {m.pops["A-06"].responsaveis[k] for k in ("financeiro", "decisao_compras", "laboratorio", "contabilidade")}
     saida = []
     for t in m.tarefas.tarefas.values():
         rotulo = next((r for k, r in INTERNOS.items() if t.titulo.startswith(k)), None)

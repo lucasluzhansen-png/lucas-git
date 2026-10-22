@@ -40,6 +40,7 @@ class ClinusDados:
     lab_os: list[dict] = field(default_factory=list)  # store lab_os (ordens de serviço do laboratório)
     guias: list[dict] = field(default_factory=list)  # store clinus_guias (módulo "Faturamento de convênio")
     recebido_por_dia: dict[str, float] = field(default_factory=dict)  # "AAAA-MM-DD" → total recebido (para conferir o fechamento de caixa)
+    recebido_por_paciente: dict[tuple[str, int], float] = field(default_factory=dict)  # (id do paciente, ano) → total recebido (informes do IR)
     stores_brutos: dict = field(default_factory=dict)  # só para diagnóstico de estrutura; nada daqui é usado como dado de paciente
 
     def eh_paciente_atual(self, telefone: str | None) -> bool:
@@ -226,6 +227,8 @@ def carregar_backup(caminho: Path) -> ClinusDados:
             dia = data_br(pg.get("d")) or data_br(pg.get("iso"))
             if dia and _valor(pg.get("valor")):
                 d.recebido_por_dia[dia.isoformat()] = round(d.recebido_por_dia.get(dia.isoformat(), 0.0) + _valor(pg.get("valor")), 2)
+                k = (str(p.get("id")), dia.year)
+                d.recebido_por_paciente[k] = round(d.recebido_por_paciente.get(k, 0.0) + _valor(pg.get("valor")), 2)
     ret = (bruto.get("stores") or {}).get("clinus_retornos_v1")
     if ret:
         lista = json.loads(ret) if isinstance(ret, str) else ret
