@@ -7,7 +7,7 @@ from pathlib import Path
 from hansen.textos import modelo_aniversario, variaveis
 from hansen.yaml_parser import POP, carregar_todos
 
-POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02"]
+POPS_DA_FOLHA = ["R-00", "R-02", "A-01", "A-06", "CM-01", "CM-02", "FN-01"]
 NIVEL = {"HUMANO": "Só humano age", "IA_SUGERE": "A IA sugere; um humano decide", "IA_AUDITA": "A IA audita", "IA_EXECUTA": "A IA faz sozinha", "IA_SOZINHA": "A IA faz sozinha"}
 MUDOU = [
     "R-00: escopo ampliado (orto, alinhadores, PPR, PT, restaurações, lentes, coroas, bruxismo, implantes, clareamento, facetas, próteses encaminhados para agendar); serviço fora do escopo: indicar profissionais parceiros; paciente atual: dentista faz o 1º atendimento e encaminha.",
@@ -15,12 +15,15 @@ MUDOU = [
     "A-01: abertura da clínica só é registada (sem tarefa de aprovação).",
     "A-06: aprovações e alertas vermelhos vão para o Dr. Lucas; ligação de no-show e agendamento para a Recepção.",
     "NOVOS: CM-01 (lembretes de relacionamento) e CM-02 (retomada de orçamentos, reativação e manutenção), aprovados em conteúdo pelo Dr. Lucas em 22/10/2026.",
+    "NOVO: FN-01 (Financeiro: lembrete de parcela a vencer e cobrança de atraso). A IA só sugere; a Recepção revisa e envia. Atraso após 3 dias (decisão do RT). Ainda sem aprovação.",
 ]
 PENDENTE = [
     "Oferta de abatimento de 15% no clareamento (aniversário): validar com o CRO / Código de Ética (CFO 118/2012) antes do envio real.",
     "Consentimento do paciente para mensagens comerciais: criar o registo no Clinus (sem ele, aniversário não é enviado automaticamente).",
     "Valores assumidos a confirmar: retorno avisado 2 dias antes; manutenção vencida após 180 dias (regra do Clinus).",
     "Lista de palavras de urgência clínica e de procedimentos fora do escopo: revisão clínica.",
+    "FN-01: confirmar valores assumidos (lembrete 3 dias antes; 1 cobrança a cada 7 dias por paciente; 10 sugestões por dia) e revisar o texto de cobrança.",
+    "Financeiro ainda por desenhar: fechamento de caixa e de convênio, pendências com convênio, contas a pagar, compras e manutenção de equipamentos.",
     "Lista de profissionais parceiros (a ser entregue pelo Dr. Lucas).",
 ]
 

@@ -9,8 +9,8 @@ PRIV = {"dado_sensivel": False, "base_legal_lgpd": "obrigacao_legal", "retencao_
 ATOR = {"type": "humano", "id": "u1", "papel": "rt"}
 
 
-def test_13_pops_validos():
-    assert len(carregar_todos()) == 15
+def test_todos_os_pops_validos():
+    assert len(carregar_todos()) == 16
 
 
 def test_ledger_cadeia_e_adulteracao(tmp_path):

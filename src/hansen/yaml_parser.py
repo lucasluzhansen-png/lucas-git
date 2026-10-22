@@ -21,7 +21,8 @@ class Regra(BaseModel):
     # Opcionais: tornam a regra executável pelo Maestro (sem lógica fixa no Python).
     palavras_chave: list[str] = []
     efeito: Literal["bloquear", "alertar_humano", "escalar", "rejeitar_fecho", "marcar_no_show", "adiar_envio", "encaminhar_agendamento", "atendimento_clinico_humano",
-                    "enviar_parabens", "sem_consentimento", "enviar_lembrete_retorno", "retomar_orcamento", "reativar_paciente", "revisar_manutencao"] | None = None
+                    "enviar_parabens", "sem_consentimento", "enviar_lembrete_retorno", "retomar_orcamento", "reativar_paciente", "revisar_manutencao",
+                    "lembrar_vencimento", "cobrar_atraso"] | None = None
     parametros: dict[str, int] = {}
 
 

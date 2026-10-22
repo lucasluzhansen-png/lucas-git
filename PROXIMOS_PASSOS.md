@@ -8,7 +8,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (74 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (81 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
@@ -20,6 +20,7 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - `maestro.py`: roteia por agentes, respeita nível de autonomia, pausa do RT, cria tarefas.
 - `agentes/recepcao.py` (R-00, R-02), `agentes/rotina.py` (A-01, A-06) e `agentes/comercial.py` (CM-01, CM-02).
 - `folha_aprovacao.py`: gera `docs/folha_aprovacao_pops.html` direto dos YAMLs (`python -m hansen.folha_aprovacao`); refazer sempre que um YAML mudar.
+- `agentes/financeiro.py` (FN-01) + `rotina_financeira.py`: parcelas do Clinus (mesma lógica de quitação em ordem do app). `python -m hansen.rotina_financeira "<backup.json>" agora` gera `saida/financeiro/painel_financeiro.html` (cartões para a Recepção com texto cordial e link wa.me; só sugere). Tarefas: `python -m hansen.tarefas_cli saida\\financeiro listar|fechar`.
 - `cadastros.py`: relatório de qualidade dos cadastros (`python -m hansen.cadastros "<backup.json>"`): terminal só com contagens; planilha com nomes em `saida/cadastros/` (fora do Git).
 - `rotina_comercial.py`: rotina diária do Comercial (`python -m hansen.rotina_comercial "<backup.json>" agora`); ao final gera e abre `saida/comercial/painel_comercial.html` (`painel_comercial.py`): cartões para o Dr. Lucas com nome, texto formal sugerido (CM-02.yaml, sem valores) e link wa.me (quem envia é o humano pelo app do WhatsApp Business). O arquivo tem nomes/telefones: fica em saida/ (fora do Git).
 - `tarefas_cli.py`: `python -m hansen.tarefas_cli saida\\comercial listar` e `... fechar N "evidência"` (fecha tarefa; o cartão some do painel).
@@ -51,6 +52,12 @@ IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nu
 - Mensagem de aniversário tende a ser categoria "marketing" na WhatsApp Business API (mais cara que utilidade); conferir com o provedor.
 - "Orçamento em aberto" usa a MESMA definição do relatório do Clinus: decisão `pensar` OU zona `orcpendente` OU etapa 7 OU orçamento novo sem aprovação. "Manutenção vencida" = etapa 10 há 180+ dias (também do Clinus). "Base histórica importada" (sem ação humana) é ignorada, como no Clinus. Pacientes na zona `perdidos` não são reativados. Teste com backups reais (21/10 e 09/10): quase nenhum paciente tem `decisao`, nascimento ou retornos preenchidos, então a rotina achou pouco a fazer.
 - Formato do store `clinus_retornos_v1` deduzido do código (campos `pacId`, `status`, `devido`/`data`); validar com backup real.
+
+## Agente Financeiro (decisões do RT, 22/10/2026)
+- Escopo pedido: pendências com convênio, fechamento de caixa de convênio, compras dental, manutenção de equipamentos, parcelas em atraso, parcelas a vencer, fechamento de caixa, contas a pagar.
+- Decisões: A IA SÓ SUGERE; responsável: Recepção (A-06.yaml `financeiro`); atraso após 3 dias.
+- FEITO: FN-01 (parcelas a vencer e em atraso). Assumidos: lembrete 3 dias antes, 1 cobrança a cada 7 dias por paciente, 10 sugestões/dia. Cobrança: texto cordial, sem juros/multa/ameaça/negativação (CDC art. 42; conferir com advogado).
+- FALTA (precisa da estrutura real dos stores `clinus_caixa`, `clinus_contas_pagar`, `clinus_compras`, `clinus_equipamentos`, `clinus_convenios`): rodar `python -m hansen.clinus "<backup.json>"` e colar a seção "Financeiro" (só nomes de campos e contagens, sem valores).
 
 ## Premissas ainda NÃO confirmadas com a clínica
 - "Madrugada" = 0h às 7h (alertas silenciados até 7h).

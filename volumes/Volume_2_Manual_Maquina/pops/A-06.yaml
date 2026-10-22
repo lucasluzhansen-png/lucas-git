@@ -16,5 +16,6 @@ responsaveis:
   alerta_rt: "lucas"
   ligacao_no_show: "recepcao"
   tratar_manual: "recepcao"
+  financeiro: "recepcao"  # decisão do RT
   contato_comercial: "lucas"  # decisão do RT
   agendar_paciente: "recepcao"  # decisão do RT: recepção agenda sozinha

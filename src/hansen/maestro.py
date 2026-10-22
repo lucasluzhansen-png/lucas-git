@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from hansen.agentes.comercial import Comercial
+from hansen.agentes.financeiro import Financeiro
 from hansen.agentes.recepcao import Recepcao
 from hansen.agentes.rotina import Rotina
 from hansen.canal import Notificador
@@ -36,7 +37,7 @@ class Maestro:
         self.ledger = ledger
         self.cerebro = cerebro
         self.pops = pops or carregar_todos()
-        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops)]
+        self.agentes = [Recepcao(self.pops), Rotina(), Comercial(self.pops), Financeiro()]
         self.notificador = notificador
         self.clinus = clinus
         self._arq_pausas = Path(estado) / "pausas.json" if estado else None
@@ -117,7 +118,7 @@ class Maestro:
             return self.tarefas.criar(**tarefa_req)
         if estado == "executado" and acao != "marcar_no_show":
             return None
-        prioridade = "verde" if estado == "aguarda_humano" and acao != "atendimento_clinico_humano" else "amarela"
+        prioridade = "verde" if estado == "aguarda_humano" and acao not in ("atendimento_clinico_humano", "cobrar_atraso") else "amarela"
         titulo = {
             "marcar_no_show": "Ligar ao paciente: risco de no-show",
             "agente_pausado": "Agente pausado pelo RT: tratar este pedido manualmente",
@@ -128,9 +129,11 @@ class Maestro:
             "retomar_orcamento": "Retomar contato: orçamento em aberto ('vai pensar')",
             "reativar_paciente": "Reativar paciente parado: contato de relacionamento",
             "revisar_manutencao": "Contatar para revisão/manutenção vencida",
+            "cobrar_atraso": "Cobrar parcela em atraso (sugestão)",
+            "lembrar_vencimento": "Lembrar parcela a vencer (sugestão)",
         }.get(acao) or f"Aprovar decisão da IA ({pop_id}): {acao}"
         if ref:  # referência, sem nome: dados de paciente não vão para tarefas/ledger
             titulo += f" [{ref}]"
         quem = self.pops["A-06"].responsaveis
-        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial", "revisar_manutencao": "contato_comercial"}.get(acao, "aprovacao_ia")
+        chave = {"marcar_no_show": "ligacao_no_show", "agente_pausado": "tratar_manual", "sem_agente": "tratar_manual", "sem_regra": "tratar_manual", "encaminhar_agendamento": "agendar_paciente", "retomar_orcamento": "contato_comercial", "reativar_paciente": "contato_comercial", "revisar_manutencao": "contato_comercial", "cobrar_atraso": "financeiro", "lembrar_vencimento": "financeiro"}.get(acao, "aprovacao_ia")
         return self.tarefas.criar(f"{titulo}. {detalhe}", "maestro", quem[chave], prioridade)

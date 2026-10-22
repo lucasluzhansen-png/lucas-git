@@ -20,13 +20,20 @@ TIPOS = {
 }
 
 
-def cartoes(m: Maestro, clinus: ClinusDados) -> list[dict]:
-    dono = m.pops["A-06"].responsaveis["contato_comercial"]
+TIPOS_FINANCEIRO = {
+    "Cobrar parcela em atraso": ("cobrar_atraso", "FN-01", "Parcela em atraso"),
+    "Lembrar parcela a vencer": ("lembrar_vencimento", "FN-01", "Parcela a vencer"),
+}
+
+
+def cartoes(m: Maestro, clinus: ClinusDados, quem: str = "contato_comercial", tipos: dict | None = None) -> list[dict]:
+    dono = m.pops["A-06"].responsaveis[quem]
+    tipos = tipos or TIPOS
     saida = []
     for t in m.tarefas.tarefas.values():
         if t.estado not in ("aberta", "escalada") or t.responsavel != dono:
             continue
-        tipo = next(((k, v) for k, v in TIPOS.items() if t.titulo.startswith(k)), None)
+        tipo = next(((k, v) for k, v in tipos.items() if t.titulo.startswith(k)), None)
         ref = re.search(r"\[paciente ([^\]]+)\]", t.titulo)
         if not tipo or not ref:
             continue
@@ -36,7 +43,8 @@ def cartoes(m: Maestro, clinus: ClinusDados) -> list[dict]:
         modelo, pop, rotulo = tipo[1]
         if modelo == "parabens":
             modelo = modelo_aniversario(m.pops[pop])
-        texto = montar_texto(m.pops[pop], modelo, pac["nome"])
+        data = re.search(r"(?:desde|vence em) (\d{2}/\d{2})", t.titulo)
+        texto = montar_texto(m.pops[pop], modelo, pac["nome"], data_hora=data.group(1) if data else "")
         dig = _digitos(pac["tel"])
         dias = re.search(r"há (\d+) dias", t.titulo)
         saida.append({"tarefa": t.id, "rotulo": rotulo, "nome": pac["nome"], "dias": dias.group(1) if dias else "",
@@ -44,8 +52,9 @@ def cartoes(m: Maestro, clinus: ClinusDados) -> list[dict]:
     return saida
 
 
-def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None = None) -> Path:
-    cs = cartoes(m, clinus)
+def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None = None,
+          quem: str = "contato_comercial", tipos: dict | None = None, titulo: str = "Painel comercial") -> Path:
+    cs = cartoes(m, clinus, quem, tipos)
     agora = agora or datetime.now()
     blocos = "".join(
         f'<div class="c"><div class="t">{escape(c["rotulo"])}' + (f" · {c['dias']} dias" if c["dias"] else "") + f'</div>'
@@ -55,7 +64,7 @@ def gerar(m: Maestro, clinus: ClinusDados, destino: Path, agora: datetime | None
            else '<div class="sem">Sem telefone válido: ligar ou corrigir o cadastro no Clinus.</div>')
         + "</div>" for c in cs) or '<p>Nenhuma sugestão aberta. 🎉</p>'
     html = f"""<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Painel comercial</title>
+<title>{escape(titulo)}</title>
 <style>
 :root{{--bg:#fafafa;--tx:#222;--card:#fff;--bd:#ddd;--ac:#1a7f4b}}
 @media(prefers-color-scheme:dark){{:root{{--bg:#1c1c1e;--tx:#eee;--card:#2a2a2c;--bd:#444}}}}
@@ -66,8 +75,8 @@ h1{{font-size:1.3rem}} .aviso{{font-size:.85rem;opacity:.8;border-left:4px solid
 .m{{font-size:.92rem;background:rgba(127,127,127,.12);border-radius:8px;padding:8px 10px;margin-bottom:8px}}
 .b{{display:inline-block;background:var(--ac);color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px}} .sem{{color:#c62828;font-size:.9rem}}
 </style>
-<h1>Painel comercial · {agora:%d/%m/%Y %H:%M}</h1>
-<div class="aviso">Sugestões da IA para o Dr. Lucas. <b>Revise o texto antes de enviar.</b> A IA não cita valores ou condições de pagamento (única exceção: o desconto de aniversário no clareamento, definido pelo RT); se o paciente perguntar, responda você.
+<h1>{escape(titulo)} · {agora:%d/%m/%Y %H:%M}</h1>
+<div class="aviso">Sugestões da IA. <b>Revise o texto antes de enviar.</b> A IA não cita valores ou condições de pagamento (única exceção: o desconto de aniversário no clareamento, definido pelo RT); se o paciente perguntar, responda você.
 Este arquivo tem nomes e telefones: uso interno, não compartilhe.</div>
 {blocos}
 </html>"""
