@@ -1,9 +1,11 @@
 """Lista e fecha tarefas de uma pasta de estado. Uso:
-  python -m hansen.tarefas_cli saida\\comercial listar
-  python -m hansen.tarefas_cli saida\\comercial fechar 3 "contato feito em 22/10"
+  python -m hansen.tarefas_cli comercial listar          (ou: financeiro, hoje)
+  python -m hansen.tarefas_cli comercial fechar 3 "contato feito em 22/10"
 Fechar exige evidência (texto) e fica registado no ledger."""
 import sys
 from pathlib import Path
+
+from hansen.caminhos import pasta_saida
 
 from hansen.ledger import LedgerManager
 from hansen.tarefas import TarefaManager
@@ -19,6 +21,8 @@ def main(argv: list[str]) -> int:
         print(__doc__)
         return 1
     base = Path(argv[0])
+    if not base.exists() and (pasta_saida() / argv[0]).exists():  # aceita só o nome: comercial, financeiro, hoje
+        base = pasta_saida() / argv[0]
     if not (base / "estado" / "tarefas.json").exists():
         print(f"Nenhuma tarefa em {base}.")
         return 1

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 from hansen.clinus import ClinusDados, Consulta, carregar_backup
 from hansen.maestro import Decisao, Maestro
 
@@ -64,7 +66,7 @@ if __name__ == "__main__":  # python -m hansen.lembretes backup.json [AAAA-MM-DD
 
     if len(sys.argv) < 2:
         raise SystemExit("Uso: python -m hansen.lembretes backup.json [AAAA-MM-DDTHH:MM] [horas]")
-    base = Path("saida") / "lembretes"
+    base = pasta_saida() / "lembretes"
     base.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base / "ledger")
     canal = CanalSimulado()

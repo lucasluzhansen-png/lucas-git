@@ -5,6 +5,8 @@ import sys
 from datetime import datetime
 from html import escape
 from pathlib import Path
+
+from hansen.caminhos import pasta_saida
 from urllib.parse import quote
 
 from hansen.cadastros import analisar
@@ -157,7 +159,7 @@ if __name__ == "__main__":  # python -m hansen.hoje [backup.json|auto]
     if not backup or not backup.exists():
         raise SystemExit("Backup do Clinus não encontrado. No Clinus: Dados e backup → Exportar JSON (vai para a pasta Downloads) e rode de novo.")
     try:
-        painel = executar(backup, datetime.now(), Path("saida") / "hoje")
+        painel = executar(backup, datetime.now(), pasta_saida() / "hoje")
     except (ValueError, KeyError) as e:
         raise SystemExit(f"Não consegui ler o backup {backup.name}: {e}")
     print(f"Backup usado: {backup.name}\nPAINEL DO DIA: {painel.resolve()}")

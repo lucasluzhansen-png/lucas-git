@@ -6,6 +6,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 PS = r"""
 [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
 $xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
@@ -19,7 +21,8 @@ $app = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell
 """
 
 
-def registrar_log(titulo: str, texto: str, pasta: Path = Path("saida") / "hoje") -> None:
+def registrar_log(titulo: str, texto: str, pasta: Path | None = None) -> None:
+    pasta = pasta or pasta_saida() / "hoje"
     pasta.mkdir(parents=True, exist_ok=True)
     with open(pasta / "avisos.log", "a", encoding="utf-8") as f:
         f.write(f"{datetime.now():%Y-%m-%d %H:%M} | {titulo} | {texto}\n")
@@ -39,6 +42,7 @@ def notificar_windows(titulo: str, texto: str) -> bool:
 
 
 if __name__ == "__main__":  # python -m hansen.notificacao  → manda um aviso de teste
+    print("Pasta dos arquivos do Maestro:", (pasta_saida() / "hoje").resolve())
     ok = notificar_windows("Maestro Hansen", "Teste: se você está vendo isto, os avisos funcionam. 🦷")
-    print("Aviso enviado ao Windows." if ok else "O Windows não aceitou o aviso (ou não é Windows). O texto ficou em saida\\hoje\\avisos.log.")
+    print("Aviso enviado ao Windows." if ok else "O Windows não aceitou o aviso (ou não é Windows). O texto ficou em avisos.log dentro da pasta de saída (veja o caminho acima).")
     sys.exit(0 if ok else 1)

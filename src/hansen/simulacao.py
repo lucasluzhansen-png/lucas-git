@@ -4,6 +4,8 @@ import webbrowser
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 from hansen.agendador import Agendador
 from hansen.canal import CanalSimulado, Notificador
 from hansen.ledger import LedgerManager
@@ -25,7 +27,7 @@ def mostra(quando, titulo, d):
 
 
 def main():
-    base = Path("saida") / "simulacao"  # dentro da pasta do projeto (não na Temp do Windows)
+    base = pasta_saida() / "simulacao"  # dentro da pasta do projeto (não na Temp do Windows)
     shutil.rmtree(base, ignore_errors=True)  # cada execução começa limpa
     base.mkdir(parents=True)
     base = base.resolve()

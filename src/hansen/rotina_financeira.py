@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 from datetime import timedelta
 
 from hansen.clinus import ClinusDados, carregar_backup, data_br, guia_atrasada, guia_calc, guia_status, op_nome, situacao_parcelas
@@ -249,7 +251,7 @@ if __name__ == "__main__":  # python -m hansen.rotina_financeira backup.json [AA
 
     if len(sys.argv) < 2:
         raise SystemExit("Uso: python -m hansen.rotina_financeira backup.json [AAAA-MM-DDTHH:MM|agora]")
-    base_dir = Path("saida") / "financeiro"
+    base_dir = pasta_saida() / "financeiro"
     base_dir.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base_dir / "ledger")
     maestro = Maestro(led, estado=base_dir / "estado", notificador=Notificador(CanalSimulado(), led, carregar_todos()["R-02"]))

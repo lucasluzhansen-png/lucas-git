@@ -5,6 +5,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 from hansen.clinus import _digitos, carregar_backup
 from hansen.rotina_comercial import _data
 
@@ -60,5 +62,5 @@ if __name__ == "__main__":  # python -m hansen.cadastros backup.json
         raise SystemExit(f"Não consegui ler o backup: {e}")
     print(resumo(r))
     if r["linhas"]:
-        arq = gravar_planilha(r["linhas"], Path("saida") / "cadastros" / "cadastros_a_corrigir.csv")
+        arq = gravar_planilha(r["linhas"], pasta_saida() / "cadastros" / "cadastros_a_corrigir.csv")
         print(f"\nLista com nomes (uso interno da Recepção, não envie a ninguém): {arq.resolve()}")

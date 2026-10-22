@@ -5,6 +5,8 @@ import argparse
 import json
 from datetime import datetime
 from pathlib import Path
+
+from hansen.caminhos import pasta_saida
 from typing import Callable
 
 from hansen import hoje
@@ -21,8 +23,11 @@ def achar_backup(pastas: list[Path]) -> Path | None:
     return max(cand, key=lambda f: f.stat().st_mtime) if cand else None
 
 
-def carregar_config(arquivo: Path = Path("maestro.config.json")) -> dict:
-    cfg = json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.exists() else {}
+def carregar_config(arquivo: Path | None = None) -> dict:
+    """Procura maestro.config.json na pasta do projeto e, depois, na pasta do usuário (~/HansenMaestro no Windows)."""
+    candidatos = [arquivo] if arquivo else [Path("maestro.config.json"), pasta_saida().parent / "maestro.config.json"]
+    achado = next((c for c in candidatos if c.exists()), None)
+    cfg = json.loads(achado.read_text(encoding="utf-8")) if achado else {}
     cfg.setdefault("pastas_backup", [str(Path.home() / "Downloads")])
     return cfg
 
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     a = ap.parse_args()
     cfg = carregar_config()
     agora = datetime.fromisoformat(a.agora) if a.agora else datetime.now()
-    saida = tick(a.perfil, agora, Path("saida") / "hoje", [Path(p) for p in cfg["pastas_backup"]],
+    saida = tick(a.perfil, agora, pasta_saida() / "hoje", [Path(p) for p in cfg["pastas_backup"]],
                  (lambda t, x: print(f"[aviso] {t}: {x}")) if a.sem_aviso else notificar_windows)
     if not saida:
         print("Nada a cobrar agora.")

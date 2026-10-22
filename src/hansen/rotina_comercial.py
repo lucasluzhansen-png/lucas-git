@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from hansen.caminhos import pasta_saida
+
 from hansen.clinus import ClinusDados, carregar_backup
 from hansen.maestro import Maestro
 from hansen.sincronizar import Chaves
@@ -154,7 +156,7 @@ if __name__ == "__main__":  # python -m hansen.rotina_comercial backup.json [AAA
 
     if len(sys.argv) < 2:
         raise SystemExit("Uso: python -m hansen.rotina_comercial backup.json [AAAA-MM-DDTHH:MM]")
-    base_dir = Path("saida") / "comercial"
+    base_dir = pasta_saida() / "comercial"
     base_dir.mkdir(parents=True, exist_ok=True)
     led = LedgerManager(base_dir / "ledger")
     canal = CanalSimulado()
