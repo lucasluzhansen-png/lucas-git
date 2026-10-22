@@ -74,7 +74,7 @@ def test_so_o_aniversario_cita_desconto_e_nenhuma_mensagem_cita_valor(tmp_path):
         if "aniversário" not in t:
             assert "desconto" not in t.lower()
     aniv = next(t for _, t in canal.enviadas if "aniversário" in t)
-    assert aniv.startswith("Ana, feliz aniversário!") and "15% de desconto no clareamento" in aniv and "mês do seu aniversário" in aniv
+    assert aniv.startswith("Ana, feliz aniversário!") and "um presente para você: 15% de desconto no clareamento" in aniv and "mês do seu aniversário" in aniv
     assert "Prezado" not in aniv
     assert not any("%" in t.titulo or "R$" in t.titulo for t in m.tarefas.tarefas.values())
 
