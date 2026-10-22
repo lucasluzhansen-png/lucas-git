@@ -35,7 +35,7 @@ def _dt(texto: str) -> datetime | None:
 def _data(texto: str) -> date | None:
     for fmt in ("%Y-%m-%d", "%d/%m/%Y"):
         try:
-            return datetime.strptime((texto or "")[:10], fmt).date()
+            return datetime.strptime((texto if isinstance(texto, str) else "")[:10], fmt).date()
         except ValueError:
             continue
     return None

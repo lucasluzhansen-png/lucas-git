@@ -75,3 +75,13 @@ def test_auditor_de_baixas(tmp_path):
     audit(m, c2, datetime(2026, 5, 5, 11, 5))
     assert all(t.estado == "fechada" for t in m.tarefas.tarefas.values())  # baixa dada: fecha sozinha
     assert all("Ana" not in t.titulo for t in m.tarefas.tarefas.values())
+
+
+def test_backup_com_lixo_nao_derruba_o_ciclo(tmp_path):
+    from hansen import hoje
+    pacs = [{"id": "p1", "nome": "Ana", "tel": 5.5, "orcamento": True}, {"id": ["x"], "nome": 1}, "texto", {"id": "p2", "nome": "Bia", "tel": True}]
+    ag = [{"id": 1, "pacId": "p1", "data": "2026-05-05", "hora": 9, "status": 3, "dur": "x"}, {"id": "e2", "data": None, "status": True}, "lixo"]
+    f = tmp_path / "b.json"
+    f.write_text(json.dumps({"versao": "hrpg_v1", "pacientes": pacs, "stores": {"clinus_agenda_v2": json.dumps(ag), "lab_os": "true", "clinus_caixa": "7"}}), encoding="utf-8")
+    painel, *_ = hoje.executar_completo(f, datetime(2026, 5, 5, 12, 0), tmp_path / "o")
+    assert painel.exists()

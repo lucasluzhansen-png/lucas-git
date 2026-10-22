@@ -146,15 +146,23 @@ def executar_completo(backup: Path, agora: datetime, base: Path):
     canal = CanalSimulado()
     m = Maestro(led, pops=pops, estado=base / "estado", notificador=Notificador(canal, led, pops["R-02"]))
     dados = carregar_backup(backup)
-    lembretes.rodar(m, dados, agora, 48)
-    rotina_comercial.rodar(m, dados, agora)
-    rotina_financeira.rodar(m, dados, agora)
-    rotina_financeira.rodar_clinica(m, dados, agora)
-    rotina_laboratorio.rodar(m, dados, agora)
-    rotina_jornada.rodar(m, dados, agora)
-    rotina_sala_espera.rodar(m, dados, agora)
-    rotina_auditoria.rodar(m, dados, agora)
-    rotina_contabilidade.rodar(m, dados, agora, base / "contabilidade")
+    erros = []
+    for nome, passo in (("lembretes", lambda: lembretes.rodar(m, dados, agora, 48)),
+                        ("comercial", lambda: rotina_comercial.rodar(m, dados, agora)),
+                        ("financeiro", lambda: rotina_financeira.rodar(m, dados, agora)),
+                        ("financeiro_clinica", lambda: rotina_financeira.rodar_clinica(m, dados, agora)),
+                        ("laboratorio", lambda: rotina_laboratorio.rodar(m, dados, agora)),
+                        ("jornada", lambda: rotina_jornada.rodar(m, dados, agora)),
+                        ("sala_espera", lambda: rotina_sala_espera.rodar(m, dados, agora)),
+                        ("auditoria", lambda: rotina_auditoria.rodar(m, dados, agora)),
+                        ("contabilidade", lambda: rotina_contabilidade.rodar(m, dados, agora, base / "contabilidade"))):
+        try:  # uma rotina com problema não pode parar as outras
+            passo()
+        except Exception as e:  # noqa: BLE001
+            erros.append(f"{nome}: {type(e).__name__}: {e}")
+    if erros:
+        with (base / "erros_rotinas.log").open("a", encoding="utf-8") as f:
+            f.write(f"{agora:%Y-%m-%d %H:%M}\n" + "\n".join(erros) + "\n")
     msgs = _mensagens_do_dia(base, agora.date().isoformat(), canal.enviadas)
     html = renderizar(m, dados, backup, agora, msgs, analisar(dados))
     destino = base / "painel_do_dia.html"
