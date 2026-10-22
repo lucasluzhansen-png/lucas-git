@@ -105,6 +105,7 @@ def diagnostico(caminho: Path) -> str:
         f"Eventos de hoje em diante: {sum(1 for x in datas if x >= agora.strftime('%Y-%m-%d'))}",
         f"Status encontrados: {dict(status)}",
         f"Campos dos eventos: {sorted(campos)}",
+        *_resumo_comercial(d, agora),
         f"Outras chaves no backup: {sorted(k for k in stores if 'agenda' in k.lower() or 'consulta' in k.lower())}",
     ])
 
@@ -113,3 +114,39 @@ if __name__ == "__main__":  # python -m hansen.clinus backup.json
     import sys
 
     print(diagnostico(Path(sys.argv[1])) if len(sys.argv) > 1 else "Uso: python -m hansen.clinus backup.json")
+
+
+def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
+    """Contagens para o agente Comercial, sem nomes nem telefones."""
+    from collections import Counter
+
+    def dt(t):
+        try:
+            x = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
+            return x.replace(tzinfo=None)
+        except ValueError:
+            return None
+
+    ativos = [p for p in d.por_id.values() if p["ativo"]]
+    dias = [(agora - x).days for p in ativos if (x := dt(p["ultima_acao"]))]
+    sem_data = len(ativos) - len(dias)
+    nasc_ok = sum(1 for p in ativos if re.match(r"\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}", p["nascimento"] or ""))
+    aniv_30 = 0
+    for p in ativos:
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", p["nascimento"] or "") or None
+        if m:
+            try:
+                prox = datetime(agora.year, int(m[2]), int(m[3]))
+            except ValueError:
+                continue
+            if prox < agora.replace(hour=0, minute=0, second=0, microsecond=0):
+                prox = prox.replace(year=agora.year + 1)
+            aniv_30 += (prox - agora).days <= 30
+    campos_ret = Counter(k for r in d.retornos for k in r)
+    return [
+        f"Pacientes ativos: {len(ativos)} | decisão do orçamento: {dict(Counter(p['decisao'] or '(vazio)' for p in ativos))}",
+        f"Última ação: sem data em {sem_data}; há 7+ dias: {sum(1 for x in dias if x >= 7)}; há 90+ dias: {sum(1 for x in dias if x >= 90)}",
+        f"Nascimento preenchido: {nasc_ok} | aniversários nos próximos 30 dias: {aniv_30}",
+        f"Consentimento comercial registado: {sum(1 for p in ativos if p['consentimento'])}",
+        f"Retornos: {len(d.retornos)} | campos: {sorted(campos_ret)}",
+    ]
