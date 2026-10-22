@@ -1,0 +1,64 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Um dia com o Maestro</title>
+<style>
+:root{--bg:#fafafa;--tx:#222;--card:#fff;--bd:#ddd;--ac:#0e5e63;--u:#e65100;--ok:#2e7d32}
+@media(prefers-color-scheme:dark){:root{--bg:#1c1c1e;--tx:#eee;--card:#2a2a2c;--bd:#444}}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);max-width:760px;margin:20px auto;padding:0 16px;line-height:1.45}
+h1{font-size:1.4rem;margin:0 0 4px} h2{font-size:1.1rem;margin:30px 0 10px;color:var(--ac)}
+.sub{opacity:.75;margin-bottom:16px}
+.passos{display:grid;gap:10px}
+.p{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+.n{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.p b{display:block}
+.linha{border-left:3px solid var(--bd);margin-left:10px;padding-left:16px}
+.ev{position:relative;margin:0 0 16px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 14px}
+.ev::before{content:"";position:absolute;left:-25px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--ac)}
+.ev.u::before{background:var(--u)} .ev.ok::before{background:var(--ok)}
+.h{font-weight:700;font-size:.85rem;opacity:.7} .q{font-size:.8rem;opacity:.7}
+.toast{margin-top:6px;background:#1f2933;color:#fff;border-radius:8px;padding:8px 10px;font-size:.88rem}
+.nao{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 16px}
+.nao li{margin:6px 0}
+.faz{background:var(--card);border:2px solid var(--ac);border-radius:12px;padding:10px 16px}
+</style>
+<h1>🦷 Um dia com o Maestro</h1>
+<div class="sub">O Maestro é um <b>fiscal</b>: lê o seu Clinus de tempos em tempos e te avisa do que ficou esquecido, até você resolver.</div>
+
+<h2>Como funciona (5 passos)</h2>
+<div class="passos">
+ <div class="p"><div class="n">1</div><div><b>Vocês trabalham no Clinus como sempre</b>Nada muda no dia a dia.</div></div>
+ <div class="p"><div class="n">2</div><div><b>O Clinus guarda uma cópia dos dados</b>Numa pasta (o backup automático).</div></div>
+ <div class="p"><div class="n">3</div><div><b>A cada 15 minutos o Maestro lê a cópia</b>E procura o que está pendente: conta vencida, peça de laboratório sem consulta, parcela atrasada, orçamento parado…</div></div>
+ <div class="p"><div class="n">4</div><div><b>Achou? Avisa no canto da tela</b>Se for urgente, insiste a cada 2 horas, com tom cada vez mais firme.</div></div>
+ <div class="p"><div class="n">5</div><div><b>Você resolve no Clinus e ele para sozinho</b>Pagou a conta? Marcou a consulta? Na próxima leitura o aviso some.</div></div>
+</div>
+
+<h2>Um dia na prática</h2>
+<div class="linha">
+ <div class="ev"><div class="h">8h30 · Recepção</div><div class="toast">🦷 Maestro Hansen — Bom dia! 3 tarefa(s) para hoje, 2 urgente(s). Abra o painel do dia.</div></div>
+ <div class="ev u"><div class="h">8h30 · Recepção</div><div class="toast">URGENTE: conta vencida, cobrança de parcela. Resolva hoje ou me diga o que está travando.</div></div>
+ <div class="ev ok"><div class="h">10h · Recepção</div>Paga o aluguel e marca “pago” no Clinus. <div class="q">Nada mais a fazer: o Maestro percebe sozinho.</div></div>
+ <div class="ev u"><div class="h">11h · Recepção</div><div class="toast">URGENTE: cobrança de parcela. (a conta vencida não aparece mais ✔)</div></div>
+ <div class="ev"><div class="h">8h30 · Dr. Lucas</div><div class="toast">Bom dia! 1 tarefa(s) para hoje, 0 urgente(s). Abra o painel do dia.</div>
+   Abre o painel, vê o paciente com orçamento parado há 13 dias, o texto pronto e o botão <b>Abrir no WhatsApp</b>. <div class="q">Quem envia a mensagem é você.</div></div>
+ <div class="ev"><div class="h">Quando a peça do laboratório chega</div>Se o paciente não tem consulta marcada, a Recepção recebe: “peça chegou e não há consulta marcada”. Marcou a consulta? O aviso some.</div>
+ <div class="ev"><div class="h">17h30 · todos</div><div class="toast">Fim do dia: ficaram 2 tarefa(s) abertas. Amanhã cedo elas voltam.</div></div>
+ <div class="ev u"><div class="h">Se a Recepção ignorar por 2 dias</div>Você, Dr. Lucas, recebe: “Recepção com 1 tarefa parada há 2+ dias”.</div>
+</div>
+
+<h2>O que o Maestro NÃO faz</h2>
+<ul class="nao">
+ <li>❌ Não manda mensagem para paciente sozinho (você ou a Recepção enviam).</li>
+ <li>❌ Não decide nada clínico: nem diagnóstico, nem prescrição.</li>
+ <li>❌ Não avalia a peça do laboratório: só olha prazo e etapa.</li>
+ <li>❌ Não mexe no seu Clinus: só lê.</li>
+ <li>❌ Não coloca nome de paciente nos avisos.</li>
+</ul>
+
+<h2>O que você precisa fazer para ele funcionar (3 coisas)</h2>
+<div class="faz"><ol>
+ <li><b>No Clinus:</b> Dados e backup → ☁ Escolher pasta de backup (OneDrive/Drive).</li>
+ <li><b>No computador:</b> dar dois cliques em <code>testar_aviso.bat</code> e depois em <code>instalar_maestro.bat lucas</code>.</li>
+ <li><b>Todo dia:</b> manter o Clinus aberto no Chrome/Edge (é ele que grava o backup) e <b>registrar no Clinus o que for feito</b>.</li>
+</ol></div>
+<p class="q">Importante: o Maestro só enxerga o que está no Clinus. Se algo foi feito “fora” (de cabeça ou no papel) e não foi registrado, ele continua cobrando.</p>
+</html>
