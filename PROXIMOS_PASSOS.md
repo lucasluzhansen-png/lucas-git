@@ -114,3 +114,8 @@ Nenhum aberto dos 4 anteriores (títulos, serviços, ruído e texto no YAML fora
 4. Piloto de 2 semanas só com R-02: a IA propõe, a Recepção executa à mão, comparar acertos.
 5. Só depois: WhatsApp real, Esterilização, AWS.
 6. **No final: lembrar o RT de passar a lista de parceiros.**
+
+## Painel web local (146 testes)
+- Dois cliques em `abrir_maestro.bat` abre o painel no navegador (perfis Dr. Lucas/Recepção, "Feito", WhatsApp, arrastar backup).
+- Código: `src/hansen/app.py`, `src/hansen/web/painel.html`. Log: `app.log`.
+- Não testado em Windows real. Pendente: lista de profissionais parceiros (lembrar o Dr. Lucas).

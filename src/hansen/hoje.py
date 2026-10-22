@@ -135,6 +135,10 @@ h1{{font-size:1.35rem;margin:0}} h2{{font-size:1.05rem;margin:26px 0 8px;padding
 
 
 def executar(backup: Path, agora: datetime, base: Path) -> Path:
+    return executar_completo(backup, agora, base)[0]
+
+
+def executar_completo(backup: Path, agora: datetime, base: Path):
     from hansen import lembretes, rotina_comercial, rotina_financeira, rotina_laboratorio
     pops = carregar_todos()
     base.mkdir(parents=True, exist_ok=True)
@@ -151,7 +155,7 @@ def executar(backup: Path, agora: datetime, base: Path) -> Path:
     html = renderizar(m, dados, backup, agora, msgs, analisar(dados))
     destino = base / "painel_do_dia.html"
     destino.write_text(html, encoding="utf-8")
-    return destino
+    return destino, m, dados, msgs
 
 
 if __name__ == "__main__":  # python -m hansen.hoje [backup.json|auto]

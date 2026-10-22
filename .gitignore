@@ -2,3 +2,4 @@ __pycache__/
 .pytest_cache/
 saida/
 maestro.config.json
+app.log
