@@ -5,10 +5,15 @@ Cole este arquivo no início de um chat novo.
 ## Regra de ouro
 IA cuida da burocracia e cobra a equipe. Humano cuida do risco clínico. A IA nunca diagnostica, prescreve ou decide clínica. O RT pode vetar tarefas e pausar agentes. Dúvida, falha ou caso sem regra = vai para um humano.
 
+## COMO VER TUDO (um clique)
+- Dê dois cliques em `abrir_painel.bat` (na pasta do projeto): ele pega o backup mais recente do Clinus em Downloads, roda TODAS as rotinas (lembretes, comercial, financeiro, convênio) e abre UMA página: `saida/hoje/painel_do_dia.html`, com o mascote "Maestro" e a saudação do dia. Antes, exporte um backup novo no Clinus (Dados e backup → Exportar JSON).
+- Equivalente no PowerShell: `$env:PYTHONPATH="src"; python -m hansen.hoje auto`
+- O painel mostra: mensagens prontas (Recepção envia à mão pelo WhatsApp Business), tarefas do Dr. Lucas, tarefas da Recepção, qualidade dos cadastros e estado do sistema. Modo assistido: nada é enviado automaticamente.
+
 ## Repositório
 - Repo: `lucasluzhansen-png/lucas-git`, branch `claude/bold-mccarthy-dmc44n`, PR #3 (rascunho).
 - Python 3.10+. Instalar: `pip install pydantic pyyaml cryptography pytest`
-- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (94 passando)
+- Testes (PowerShell): `$env:PYTHONPATH="src"; python -m pytest -q tests` (100 passando)
 - Simulação de um dia + painel: `$env:PYTHONPATH="src"; python -m hansen.simulacao` (gera `saida/simulacao/painel.html`)
 - Lembretes com o backup real do Clinus: `$env:PYTHONPATH="src"; python -m hansen.lembretes "<backup.json>" agora 720` (720 = janela em horas). Diagnóstico sem dados de paciente: `python -m hansen.clinus "<backup.json>"`.
 - Fluxograma: `docs/fluxograma.html`
