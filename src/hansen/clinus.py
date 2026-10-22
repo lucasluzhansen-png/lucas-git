@@ -4,7 +4,7 @@ consentimento): CPF, fotos, prontuário e anamnese ficam de fora."""
 import json
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 # Estados da agenda do Clinus em que o lembrete ainda faz sentido.
@@ -33,6 +33,7 @@ class ClinusDados:
     por_id: dict[str, dict] = field(default_factory=dict)
     agenda: list[dict] = field(default_factory=list)
     retornos: list[dict] = field(default_factory=list)
+    stores_brutos: dict = field(default_factory=dict)  # só para diagnóstico de estrutura; nada daqui é usado como dado de paciente
 
     def eh_paciente_atual(self, telefone: str | None) -> bool:
         return _digitos(telefone) in self.por_telefone
@@ -54,6 +55,46 @@ class ClinusDados:
 
     def proximas(self, agora: datetime, horas: int = 24) -> list[Consulta]:
         return self.consultas_entre(agora, agora + timedelta(hours=horas))
+
+
+def _valor(v) -> float:
+    """Valor em reais: aceita número ou texto no formato brasileiro ("1.500,00", "R$ 300")."""
+    if isinstance(v, (int, float)):
+        return float(v)
+    t = re.sub(r"[^\d,.\-]", "", str(v or ""))
+    if "," in t:
+        t = t.replace(".", "").replace(",", ".")
+    try:
+        return float(t)
+    except ValueError:
+        return 0.0
+
+
+def _pago(orc: dict) -> float:
+    """Total recebido do orçamento (estornos não contam), como no Clinus (`_valorPago`)."""
+    pg = orc.get("pagamentos")
+    if isinstance(pg, list) and pg:
+        return sum(0.0 if (not x or x.get("estornadoEm")) else _valor(x.get("valor")) for x in pg)
+    return _valor(orc.get("pago")) if orc.get("pago") not in (None, "") else 0.0
+
+
+def situacao_parcelas(parcelas: list[dict], pago: float, hoje: date) -> list[dict]:
+    """O dinheiro recebido quita as parcelas na ordem (como no Clinus, `_situacaoParcelas`)."""
+    saldo, saida = round(pago, 2), []
+    for pc in parcelas:
+        valor = _valor(pc.get("valor"))
+        usado = min(saldo, valor)
+        saldo = round(saldo - usado, 2)
+        quitada = usado >= valor - 0.01
+        try:
+            dias = (hoje - datetime.strptime(str(pc.get("venc"))[:10], "%Y-%m-%d").date()).days
+        except ValueError:
+            dias = None
+        saida.append({"valor": valor, "venc": str(pc.get("venc") or "")[:10], "quitada": quitada,
+                      "restante": round(valor - usado, 2),
+                      "atraso": 0 if quitada or dias is None or dias <= 0 else dias,
+                      "dias_ate_vencer": None if dias is None else -dias})
+    return saida
 
 
 def _historico(p: dict) -> bool:
@@ -80,11 +121,14 @@ def carregar_backup(caminho: Path) -> ClinusDados:
     if bruto.get("versao") != "hrpg_v1":
         raise ValueError("Arquivo não parece um backup do Clinus (versao esperada: hrpg_v1).")
     d = ClinusDados(exportado_em=bruto.get("exportadoEm", ""))
+    d.stores_brutos = dict(bruto.get("stores") or {})
     for p in bruto.get("pacientes") or []:
         enxuto = {
             "id": p.get("id"), "nome": p.get("nome", ""), "tel": p.get("tel", ""),
             "nascimento": p.get("nascimento") or "", "decisao": p.get("decisao") or "",
             "ultima_acao": p.get("ultimaAcao") or p.get("criadoEm") or "",
+            "parcelas": [x for x in ((p.get("orcamento") or {}).get("parcelas") or []) if isinstance(x, dict)],
+            "pago": _pago(p.get("orcamento") or {}),
             "etapa": p.get("etapa") if isinstance(p.get("etapa"), int) else None, "zona": p.get("zona") or "",
             "orc_aberto": _orc_aberto(p), "historico": _historico(p),
             "ativo": not (p.get("deleted") or p.get("arquivado") or p.get("ativo") is False),
@@ -158,7 +202,7 @@ def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
                 prox = prox.replace(year=agora.year + 1)
             aniv_30 += (prox - agora).days <= 30
     campos_ret = Counter(k for r in d.retornos for k in r)
-    return [
+    return _resumo_financeiro(d, agora) + [
         f"Pacientes ativos: {len(ativos)} | decisão do orçamento: {dict(Counter(p['decisao'] or '(vazio)' for p in ativos))}",
         f"Última ação: sem data em {sem_data}; há 7+ dias: {sum(1 for x in dias if x >= 7)}; há 90+ dias: {sum(1 for x in dias if x >= 90)}",
         f"Nascimento preenchido: {nasc_ok} | aniversários nos próximos 30 dias: {aniv_30}",
@@ -167,6 +211,40 @@ def _resumo_comercial(d: ClinusDados, agora: datetime) -> list[str]:
         f"Consentimento comercial registado: {sum(1 for p in ativos if p['consentimento'])}",
         f"Retornos: {len(d.retornos)} | campos: {sorted(campos_ret)}",
     ]
+
+
+def _resumo_financeiro(d: ClinusDados, agora: datetime) -> list[str]:
+    """Só contagens e NOMES DE CAMPOS (nenhum valor, nome ou telefone)."""
+    com_parc = [p for p in d.por_id.values() if p["ativo"] and p["parcelas"]]
+    atrasadas = pacientes_atrasados = 0
+    for p in com_parc:
+        n = sum(1 for x in situacao_parcelas(p["parcelas"], p["pago"], agora.date()) if x["atraso"] >= 3)
+        atrasadas += n
+        pacientes_atrasados += n > 0
+    return [f"Financeiro: pacientes com parcelamento: {len(com_parc)} | parcelas atrasadas (3+ dias): {atrasadas} em {pacientes_atrasados} paciente(s)"] + _estrutura_stores(d)
+
+
+def _estrutura_stores(d: ClinusDados) -> list[str]:
+    linhas = []
+    for chave, rotulo in (("clinus_caixa", "caixa"), ("clinus_contas_pagar", "contas a pagar"), ("clinus_compras", "compras"),
+                          ("clinus_equipamentos", "equipamentos"), ("clinus_convenios", "convênios")):
+        bruto = d.stores_brutos.get(chave)
+        if bruto is None:
+            linhas.append(f"  [{rotulo}] não existe no backup")
+            continue
+        try:
+            dado = json.loads(bruto) if isinstance(bruto, str) else bruto
+        except ValueError:
+            linhas.append(f"  [{rotulo}] ilegível")
+            continue
+        if isinstance(dado, list):
+            campos = sorted({k for e in dado if isinstance(e, dict) for k in e})
+            linhas.append(f"  [{rotulo}] lista com {len(dado)} item(ns); campos: {campos}")
+        elif isinstance(dado, dict):
+            linhas.append(f"  [{rotulo}] objeto com {len(dado)} chave(s); chaves de 1º nível: {sorted(dado)[:15]}")
+        else:
+            linhas.append(f"  [{rotulo}] tipo {type(dado).__name__}")
+    return linhas
 
 
 if __name__ == "__main__":  # python -m hansen.clinus backup.json
