@@ -6,6 +6,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 from typing import Callable
 
@@ -37,7 +38,7 @@ def tick(perfil: str, agora: datetime, base: Path, pastas: list[Path], notificar
     pops = carregar_todos()
     pop = pops["MA-01"]
     estado_arq = base / "estado" / f"cobrador_{perfil}.json"
-    estado = json.loads(estado_arq.read_text(encoding="utf-8")) if estado_arq.exists() else {}
+    estado = _ler_json_ou_isolar(estado_arq, {}) if estado_arq.exists() else {}
     backup = achar_backup(pastas)
     idade = None
     if backup:

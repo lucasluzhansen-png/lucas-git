@@ -6,6 +6,7 @@ from datetime import datetime
 from html import escape
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.caminhos import pasta_saida
 from urllib.parse import quote
 
@@ -29,7 +30,7 @@ def achar_backup_recente(pasta: Path) -> Path | None:
 def _mensagens_do_dia(base: Path, hoje: str, novas: list[tuple[str, str]]) -> list[dict]:
     """Mensagens prontas para a Recepção enviar à mão. Ficam salvas durante o dia (para não sumirem se o painel for reaberto)."""
     arq = base / "estado" / "mensagens_hoje.json"
-    atual = json.loads(arq.read_text(encoding="utf-8")) if arq.exists() else {}
+    atual = _ler_json_ou_isolar(arq, {}) if arq.exists() else {}
     msgs = atual.get("mensagens", []) if atual.get("data") == hoje else []
     ja = {(m["destino"], m["texto"]) for m in msgs}
     for destino, texto in novas:

@@ -1,5 +1,6 @@
 """Tarefas (POP A-06): agentes cobram humanos; o RT sempre pode vetar. Regras vêm do YAML."""
 import json
+import os
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -24,12 +25,29 @@ class Tarefa:
     alerta_pendente: bool = False
 
 
+def escrever_atomico(arquivo: Path, texto: str):
+    """Grava num arquivo temporário e troca de uma vez: queda de luz no meio não deixa o arquivo pela metade."""
+    tmp = Path(arquivo).with_name(Path(arquivo).name + ".tmp")
+    tmp.write_text(texto, encoding="utf-8")
+    os.replace(tmp, arquivo)
+
+
+def _ler_json_ou_isolar(arquivo: Path, padrao):
+    """Arquivo de estado ilegível (cortado, editado à mão): guarda uma cópia `.corrompido` e recomeça vazio.
+    As rotinas recriam as tarefas a partir do backup do Clinus no próximo ciclo."""
+    try:
+        return json.loads(arquivo.read_text(encoding="utf-8"))
+    except (ValueError, KeyError, TypeError):
+        arquivo.replace(arquivo.with_name(arquivo.name + ".corrompido"))
+        return padrao
+
+
 def ler_tarefas(arquivo: Path) -> list[Tarefa]:
     """Lê só o arquivo de tarefas (sem ledger nem YAML): usado pelo cobrador."""
     if not Path(arquivo).exists():
         return []
     saida = []
-    for d in json.loads(Path(arquivo).read_text(encoding="utf-8")):
+    for d in _ler_json_ou_isolar(Path(arquivo), []):
         d["criada_em"] = datetime.fromisoformat(d["criada_em"])
         saida.append(Tarefa(**d))
     return saida
@@ -45,14 +63,14 @@ class TarefaManager:
 
     def _carregar(self):
         if self.arquivo and self.arquivo.exists():
-            for d in json.loads(self.arquivo.read_text(encoding="utf-8")):
+            for d in _ler_json_ou_isolar(self.arquivo, []):
                 d["criada_em"] = datetime.fromisoformat(d["criada_em"])
                 self.tarefas[d["id"]] = Tarefa(**d)
 
     def salvar(self):
         if self.arquivo:
             dados = [{**asdict(t), "criada_em": t.criada_em.isoformat()} for t in self.tarefas.values()]
-            self.arquivo.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
+            escrever_atomico(self.arquivo, json.dumps(dados, ensure_ascii=False, indent=2))
 
     def alertas_pendentes(self) -> list[Tarefa]:
         return [t for t in self.tarefas.values() if t.alerta_pendente]

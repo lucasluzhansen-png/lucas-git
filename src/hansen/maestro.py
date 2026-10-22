@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from hansen.tarefas import _ler_json_ou_isolar
 from hansen.agentes.comercial import Comercial
 from hansen.agentes.financeiro import Financeiro
 from hansen.agentes.contabilidade import Contabilidade
@@ -49,7 +50,7 @@ class Maestro:
         if estado:
             Path(estado).mkdir(parents=True, exist_ok=True)
         self.resolvidas_auto = 0  # tarefas fechadas sozinhas porque o Clinus mostra que a situação acabou
-        self.pausados: set[str] = set(json.loads(self._arq_pausas.read_text(encoding="utf-8"))) if self._arq_pausas and self._arq_pausas.exists() else set()
+        self.pausados: set[str] = set(_ler_json_ou_isolar(self._arq_pausas, [])) if self._arq_pausas and self._arq_pausas.exists() else set()
         self.tarefas = TarefaManager(ledger, self.pops["A-06"], arquivo=Path(estado) / "tarefas.json" if estado else None)
 
     def receber_mensagem(self, texto: str, dados: dict | None = None) -> Decisao:

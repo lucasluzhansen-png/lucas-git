@@ -1,6 +1,7 @@
 """Liga cada tarefa à SITUAÇÃO do Clinus que a originou (a "chave") e a fecha sozinha quando a situação deixa de existir
 (parcela paga, conta paga, caixa fechado, guia que avançou...). Assim o Maestro não cobra o que já foi resolvido."""
 import json
+from hansen.tarefas import _ler_json_ou_isolar, escrever_atomico
 from pathlib import Path
 
 from hansen.maestro import Maestro
@@ -12,7 +13,7 @@ class Chaves:
         self.arq: Path | None = m.tarefas.arquivo.parent / f"chaves_{nome}.json" if m.tarefas.arquivo else None
         self.mapa: dict[str, int] = {}
         if self.arq and self.arq.exists():
-            self.mapa = {k: int(v) for k, v in json.loads(self.arq.read_text(encoding="utf-8")).items()}
+            self.mapa = {k: int(v) for k, v in _ler_json_ou_isolar(self.arq, {}).items()}
         self.ativas: set[str] = set()
 
     def marcar_ativa(self, chave: str):
@@ -32,6 +33,6 @@ class Chaves:
                 fechadas.append(tid)
             del self.mapa[chave]
         if self.arq:
-            self.arq.write_text(json.dumps(self.mapa), encoding="utf-8")
+            escrever_atomico(self.arq, json.dumps(self.mapa))
         self.m.resolvidas_auto += len(fechadas)
         return fechadas

@@ -85,3 +85,14 @@ def test_backup_com_lixo_nao_derruba_o_ciclo(tmp_path):
     f.write_text(json.dumps({"versao": "hrpg_v1", "pacientes": pacs, "stores": {"clinus_agenda_v2": json.dumps(ag), "lab_os": "true", "clinus_caixa": "7"}}), encoding="utf-8")
     painel, *_ = hoje.executar_completo(f, datetime(2026, 5, 5, 12, 0), tmp_path / "o")
     assert painel.exists()
+
+
+def test_auditor_fronteiras_de_horario(tmp_path):
+    from hansen.rotina_auditoria import rodar as audit
+    ev = {"id": "e1", "pacId": "p1", "data": "2026-05-05", "hora": "23:30", "dur": 60, "status": "atendida", "fichaPendente": True}
+    m, c = _setup(tmp_path, [ev])
+    assert audit(m, c, datetime(2026, 5, 6, 1, 29)) == []  # 59 min depois do fim (00:30), já na virada do dia
+    assert len(audit(m, c, datetime(2026, 5, 6, 1, 30))) == 1  # 60 min
+    ev2 = {"id": "e2", "pacId": "p1", "data": "2026-05-05", "hora": "08:00", "status": "atendida", "fichaPendente": True}  # sem duração: assume 30
+    m2, c2 = _setup(tmp_path, [ev2], nome="b2")
+    assert len(audit(m2, c2, datetime(2026, 5, 5, 9, 30))) == 1

@@ -29,7 +29,12 @@ class LedgerManager:
 
     def _ler_ultimo(self) -> dict | None:
         ficheiros = sorted(self.pasta.glob("*.json"))
-        return json.loads(ficheiros[-1].read_text(encoding="utf-8")) if ficheiros else None
+        if not ficheiros:
+            return None
+        try:
+            return json.loads(ficheiros[-1].read_text(encoding="utf-8"))
+        except ValueError:  # trilha de auditoria nunca é "consertada" em silêncio: para com mensagem clara
+            raise ValueError(f"Ledger corrompido ({ficheiros[-1].name}). Não apague: guarde a pasta e avise o suporte.")
 
     def registar(self, *, pop_id, ator, acao, resultado="sucesso", entrada=None, saida=None, privacidade) -> dict:
         seq = (self._ultimo["sequence"] + 1) if self._ultimo else 1
@@ -61,7 +66,10 @@ class LedgerManager:
     def verificar(self) -> bool:
         anterior = GENESIS
         for f in sorted(self.pasta.glob("*.json")):
-            ev = json.loads(f.read_text(encoding="utf-8"))
+            try:
+                ev = json.loads(f.read_text(encoding="utf-8"))
+            except ValueError:
+                return False
             sig = ev.pop("assinatura")
             if ev["hash_anterior"] != anterior:
                 return False
