@@ -162,3 +162,10 @@ def test_cli_de_tarefas_lista_e_fecha(tmp_path):
     assert main([str(base), "listar"]) == 0
     assert main([str(base), "fechar", "1"]) == 1  # sem evidência
     assert main([str(base), "fechar", "1", "contato feito"]) == 0
+
+
+def test_intervalo_entre_contatos_e_15_dias_conforme_o_rt(tmp_path):
+    from hansen.rotina_comercial import _params
+    m, _, _ = _setup(tmp_path)
+    assert _params(m, "CM-02", "reativar_paciente") == {"dias_parado": 90, "intervalo_contato_dias": 15, "maximo_por_dia": 5}
+    assert _params(m, "CM-02", "retomar_orcamento") == {"dias_orcamento": 7}
